@@ -1,0 +1,20 @@
+
+GLOBAL:
+  VIZ: True  # visualize output 
+  VIZ_LV: 1  # visualize level 
+  NEED_HIST: FALSE # need HISTORY or not
+  LOCAL_LOG_PATH: "/log"
+
+
+CONFIG:
+  channel_12:
+    axis: 1
+    algo: ""
+    model: 
+      label_converter: {0: "1"}
+      iou_thres: 0.1
+      conf_thres: 0.65
+      imgsz: 640 
+      model_path: ""
+  
+

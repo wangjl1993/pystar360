@@ -1,0 +1,8 @@
+CR300AF:
+  span: 208.95
+  width: 3.360
+  height: 4.050
+  num: 8
+  head_car_len: 27.55
+  midd_car_len: 25.650
+  cutpoints: [0.   , 0.132, 0.255, 0.377, 0.5  , 0.623, 0.746, 0.868, 1.   ]

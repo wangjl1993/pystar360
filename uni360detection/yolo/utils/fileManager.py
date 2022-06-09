@@ -1,4 +1,5 @@
 import re
+import os
 import json
 from pathlib import Path
 from filelock import FileLock  # mutex lock
@@ -8,9 +9,8 @@ IMAGE_EXT = [".png", ".jpg", "jpeg", ".bmp", ".tif"]
 
 def list_images_in_path(path,
                         filter_rules=[],
-                        filter_ext=[".png", ".jpg", "jpeg"],
+                        filter_ext=[".jpg"],
                         verbose=True,
-                        check_missing=True,
                         logger=None):
     """list images in a given path"""
     # list file in path with image extention
@@ -19,18 +19,12 @@ def list_images_in_path(path,
 
     # filter rules
     if filter_rules:
-        for filter in filter_rules:
-            images_l = filter(images_l)
+        for myfilter in filter_rules:
+            images_l = myfilter(images_l)
 
     # sorted files in an acsending order
     images_l = sorted(images_l,
                       key=lambda x: (int(re.sub("\D", "", x.name)), x))
-
-    # check if there is a missing file
-    if check_missing:
-        pattern = list(map(lambda x: int(re.sub("\D", "", x.name)), images_l))
-        if pattern != list(range(pattern[0], pattern[-1] + 1, 1)):
-            raise ValueError(f">>> File missing in {str(p)}!")
 
     # console output
     if verbose:
@@ -65,3 +59,13 @@ def read_json(path, mode="rb"):
     with open(path, mode) as f:
         load_dict = json.load(f)
     return load_dict
+
+
+def mkdirs(save_path, sub_folder=None):
+    """Make folders"""
+    if sub_folder is not None:
+        new_path = os.path.join(save_path, sub_folder)
+    else:
+        new_path = save_path
+    os.makedirs(new_path, exist_ok=True)
+    return new_path

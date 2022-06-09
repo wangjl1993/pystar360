@@ -1,0 +1,9 @@
+CRH1A-A:
+  span: 213.5
+  width: 3.328
+  height: 4.040
+  num: 8
+  head_car_len: 26.95
+  midd_car_len: 26.6
+  cutpoints: [0.     , 0.12623, 0.25082, 0.37541, 0.5    , 0.62459, 0.74918,
+       0.87377, 1.     ]
