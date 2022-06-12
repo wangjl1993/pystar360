@@ -23,10 +23,19 @@ CRH1A-A:
 
 ```
 
-- 为了之后方便替换AB车型局部项点，车厢的模版标注分为三个级别
-    - carriage，以车厢为最大框，
-    - region，车厢局部件
-    - detail，零部件
+- 为了之后方便替换AB车型局部项点，车厢的模版标注分为4个级别
+```
+    - channel, 以通道为基准 （文件夹）
+        - carriage，以车厢为最大框 （车厢.json）
+            - region，车厢局部件  
+                - detail，零部件
+
+----------
+label命名2要素： 零部件名称/个数
+标注方式：
+1、 检测是否包含n个单元对象
+2、 检测是否包含n个多元对象
+```
 
 
 - 数据的储存方式
@@ -42,11 +51,38 @@ CRH1A-A:
 - 根据设定一个棚子可能会有多个车型，每个车型需要的模型，还有参数不一样， 每个车型需要部分替换代码，如detector.py需要细节填充。
 
 ```
-车型代码，如CR300AF
-    -- config.yaml
-    -- weights/ 
-    -- xxx.py 
-    -- yyy.py
+部署文件夹x
+    | --- uni360detection
+        | --- base/
+        | --- train_library/
+        | --- ...
+    | --- CR300AF
+        | --- local_config.yaml
+        | --- template/
+            | --- channel1.json or channel1.yaml 
+            | --- channel2.json or channel2.yaml 
+            | --- ... 
+        | --- weights/
+            | --- xxx.pth
+            | --- ...
+        | --- detector.py [继承base]
+        | --- locator.py [继承base]
+        | --- main.py
+        | --- ... 
+    | --- CRH1A-A
+        | --- local_config.yaml
+        | --- template/
+            | --- channel1.json or channel1.yaml 
+            | --- channel2.json or channel2.yaml 
+            | --- ... 
+        | --- weights/
+            | --- xxx.pth
+            | --- ...
+        | --- detector.py [继承base]
+        | --- locator.py [继承base]
+        | --- main.py
+        | --- ... 
+    |           
 ```
 
 

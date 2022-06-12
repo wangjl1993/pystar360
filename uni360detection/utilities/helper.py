@@ -77,10 +77,13 @@ def frame2cutpoints(l, frame, length):
     return (l[shift], pixel)
 
 
-def read_segmented_img(l, startline, endline, imread, axis=1):
+def read_segmented_img(l, startline, endline, imread, imgsz=None, axis=1):
     """Read continuous image frame and concatenate into one image"""
     assert startline <= endline, "startline <= endline"
-    img_h, img_w = imread(l[0]).shape
+    if imgsz:
+        img_h, img_w = imgsz
+    else:
+        img_h, img_w = imread(l[0]).shape
 
     if axis == 0:
         start_idx, start_p = frame2index(startline, img_h)

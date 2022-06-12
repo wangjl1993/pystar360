@@ -1,18 +1,20 @@
 
-GLOBAL:
+SETTINGS:
   VIZ: True  # visualize output 
   VIZ_LV: 1  # visualize level 
   NEED_HIST: FALSE # need HISTORY or not
   LOCAL_LOG_PATH: "/log"
 
 
-CONFIG:
+hyps:
   channel_12:
+    img_w: 4000
+    img_h: 4096
     axis: 1
-    algo: ""
+    var_threshold: 1.5
     model: 
-      label_converter: {0: "1"}
-      iou_thres: 0.1
+      label_translator : {0: "end", 1: "mid"}
+      iou_thres: 0.45
       conf_thres: 0.65
       imgsz: 640 
       model_path: ""
