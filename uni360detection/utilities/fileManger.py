@@ -2,6 +2,7 @@ import re
 import os
 import json
 
+from omegaconf import OmegaConf
 from pathlib import Path
 from filelock import FileLock  # mutex lock
 
@@ -21,15 +22,15 @@ def mkdirs(save_path, sub_folder=None):
     return new_path
 
 
-def write_json(path, json_dict, lock=False, mode="w"):
+def write_json(path, dict, lock=False, mode="w"):
     """Write json"""
     if lock:
         with FileLock(path + ".lock"):
             with open(path, mode) as f:
-                json.dump(json_dict, f, indent=4, ensure_ascii=False)
+                json.dump(dict, f, indent=4, ensure_ascii=False)
     else:
         with open(path, mode) as f:
-            json.dump(json_dict, f, indent=4, ensure_ascii=False)
+            json.dump(dict, f, indent=4, ensure_ascii=False)
     print(f">>> Generate {path}...")
 
 
@@ -38,6 +39,17 @@ def read_json(path, mode="rb"):
     with open(path, mode) as f:
         load_dict = json.load(f)
     return load_dict
+
+def read_yaml(path):
+    return OmegaConf.load(path)
+
+def write_yaml(path, dict, lock=False):
+    if lock:
+        with FileLock(path + ".lock"):
+            OmegaConf.save(config=dict, f=path)
+    else:
+        OmegaConf.save(config=dict, f=path)
+    print(f">>> Generate {path}...")
 
 
 def list_images_in_path(path,

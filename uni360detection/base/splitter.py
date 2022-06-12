@@ -1,11 +1,11 @@
 
 import numpy as np
 
-from omegaconf import OmegaConf
 from pathlib import Path
 from skimage.metrics import structural_similarity as ssim
 
 from uni360detection.utilities.helper import *
+from uni360detection.utilities.fileManger import *
 from uni360detection.yolo.inference import YoloInfer, yolo_xywh2xyxy
 
 
@@ -80,7 +80,7 @@ class Splitter:
         self.axis = config.axis
         self.train_library_path = Path(train_library_path) / (
             major_train_code + ".yaml")
-        self.train_dict = OmegaConf.load(str(
+        self.train_dict = read_yaml(str(
             self.train_library_path)).minor_train_code
 
         self._cutframe_idx = None

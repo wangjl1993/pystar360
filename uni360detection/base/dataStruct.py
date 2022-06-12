@@ -1,6 +1,6 @@
-import numpy as np 
-from dataclasses import dataclass, fields, field, astuple, is_dataclass
+from dataclasses import dataclass,  fields, field, is_dataclass
 from typing import List, Optional, Union, Tuple
+
 
 
 @dataclass
@@ -10,33 +10,52 @@ class Point(List):
 
     def __post_init__(self):
         self.__field_name = tuple(f.name for f in fields(self))
-        assert len(self.__field_name) <= 2
+        assert len(self.__field_name) == 2
 
     def __getitem__(self, index):
         return getattr(self, self.__field_name[index], None)
         
     def __setitem__(self, index, value):
         setattr(self, self.__field_name[index], value)
+
+    def __len__(self):
+        return len(self.__field_name)
 
     def to_tuple(self):
         return tuple(getattr(self, field.name).to_tuple() \
             if is_dataclass(getattr(self, field.name)) else getattr(self, field.name) \
              for field in fields(self))
 
+    def to_list(self):
+        return list(getattr(self, field.name).to_list() \
+            if is_dataclass(getattr(self, field.name)) else getattr(self, field.name) \
+                for field in fields(self))
+
 @dataclass 
-class Rect():
+class Rect(List):
     pt1: Union[List, Tuple, Point] = field(default_factory=Point)
     pt2: Union[List, Tuple, Point] = field(default_factory=Point)
 
     def __post_init__(self):
+        self.__validate()
         self.__field_name = tuple(f.name for f in fields(self))
-        assert len(self.__field_name) <= 2
+        assert len(self.__field_name) == 2
 
     def __getitem__(self, index):
         return getattr(self, self.__field_name[index], None)
         
     def __setitem__(self, index, value):
         setattr(self, self.__field_name[index], value)
+    
+    def __len__(self):
+        return len(self.__field_name)
+
+    def __validate(self):
+        for f in fields(self):
+            if not isinstance(getattr(self, f.name), Point):
+                value = getattr(self, f.name)
+                assert len(value) == 2
+                setattr(self, f.name, Point(*value))
 
     def get_size(self):
         h = abs(self.pt2[1] - self.pt1[0])
@@ -58,35 +77,78 @@ class Rect():
             if is_dataclass(getattr(self, field.name)) else getattr(self, field.name) \
                 for field in fields(self))
 
-def initialize_rect():
-    return [Point() for _ in range(2)]
+    def to_list(self):
+        return list(getattr(self, field.name).to_list() \
+            if is_dataclass(getattr(self, field.name)) else getattr(self, field.name) \
+                for field in fields(self))
 
 @dataclass
 class BBox:
     label: str = "" # xxx-#
     name: str = "" # xxx item name 
     num2check: int = 0 # # number of item to check 
-    temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    proposal_region: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    _proposal_region: Union[Rect, List, Tuple] = field(default_factory=Rect)
     score: float = 0
     is_defect: int = 0
 
+    def __post_init__(self):
+        self.__validate()
+    
+    @property 
+    def temp_rect(self):
+        return self._temp_rect
+    
+    @temp_rect.setter
+    def temp_rect(self, value):
+        self._temp_rect = Rect(*value)
 
-# @dataclass
-# class Carriage:
-#     path: str = ""
-#     startline: float = 0.
-#     endline: float = 0.
-#     img: np.array = np.array([])
+    @property 
+    def curr_rect(self):
+        return self._curr_rect
+    
+    @curr_rect.setter
+    def curr_rect(self, value):
+        self._curr_rect = Rect(*value)
 
-# @dataclass
-# class QTrain_info:
-#     train_sn: str = ""
-#     major_train_code: str = ""
-#     minor_train_code: str = ""
-#     channel: str = ""
-#     carriage: int = 0
-#     test_train: Carriage = Carriage("", 0, 0, np.array([]))
-#     hist_train: Optional[Carriage] = Carriage("", 0, 0, np.array([]))
+    @property 
+    def proposal_rect(self):
+        return self._proposal_rect
+    
+    @proposal_rect.setter
+    def proposal_rect(self, value):
+        self._proposal_rect = Rect(*value)
+
+    @property 
+    def proposal_region(self):
+        return self._proposal_region
+    
+    @proposal_region.setter
+    def proposal_region(self, value):
+        self._proposal_region = Rect(*value)
+
+    
+    def __validate(self):
+        for f in fields(self):
+            if f.name in ("temp_rect", "curr_rect", "proposal_rect", "proposal_region"):
+                value = getattr(self, f.name)
+                assert len(value) == 2
+                setattr(self, f.name, Rect(*value))
+
+@dataclass
+class Carriage:
+    path: str = ""
+    startline: float = 0.
+    endline: float = 0.
+
+@dataclass
+class QTrain_info:
+    train_sn: str = ""
+    major_train_code: str = ""
+    minor_train_code: str = ""
+    channel: str = ""
+    carriage: int = 0
+    test_train: Carriage = field(default_factory=Carriage)
+    hist_train: Optional[Carriage] = field(default_factory=Carriage)
