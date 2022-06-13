@@ -31,10 +31,10 @@ CRH1A-A:
                 - detail，零部件
 
 ----------
-label命名2要素： 零部件名称/个数
-标注方式：
-1、 检测是否包含n个单元对象
-2、 检测是否包含n个多元对象
+
+数据标注时候， 一个方框的label命名包含2要素： 零部件名称-个数【optional】 或者 零部件名称
+
+处理的时候，通过分割符号(default="-"), 分割出 “零部件名称（可以自定义，最后通过映射得到具体结果）” 和 “个数” 如此我们可以知道该项点的检测方式，以及需要检测的个数，如 ”xxls-3“ 就是说明这个方框内需要检测的是”xxls“ 需要检测3个”，或者比如标注“xxlm” 就是这个需要检测项点名称为xxlm, 因为没有用分割符号，默认需检测零件为1.
 ```
 
 
@@ -42,8 +42,9 @@ label命名2要素： 零部件名称/个数
 ```
     客户, 如主导，华兴
     |--- 地点，如三亚，或者未知的时候用客户公司所在地
-        |-- 拍摄棚子, A，B，C，【README.md 说明】
+        |-- 拍摄棚子, A，B，C，【+数据更新表格.xls】
             |--- 车型, 如CR400AF，300AF
+                |--- 批次【optional】
                     |--- 时间戳或者uid
 ```
 
@@ -59,8 +60,8 @@ label命名2要素： 零部件名称/个数
     | --- CR300AF
         | --- local_config.yaml
         | --- template/
-            | --- channel1.json or channel1.yaml 
-            | --- channel2.json or channel2.yaml 
+            | --- 1/ or channel1.json or channel1.yaml 
+            | --- 2/ or channel2.json or channel2.yaml 
             | --- ... 
         | --- weights/
             | --- xxx.pth

@@ -85,6 +85,7 @@ class Rect(List):
 @dataclass
 class BBox:
     label: str = "" # xxx-#
+    order: int = 0
     name: str = "" # xxx item name 
     num2check: int = 0 # # number of item to check 
     _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
