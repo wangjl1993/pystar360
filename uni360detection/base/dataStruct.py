@@ -2,7 +2,6 @@ from dataclasses import dataclass,  fields, field, is_dataclass
 from typing import List, Optional, Union, Tuple
 
 
-
 @dataclass
 class Point(List):
     x: Union[int, float] = 0.
@@ -33,8 +32,8 @@ class Point(List):
 
 @dataclass 
 class Rect(List):
-    pt1: Union[List, Tuple, Point] = field(default_factory=Point)
-    pt2: Union[List, Tuple, Point] = field(default_factory=Point)
+    _pt1: Union[List, Tuple, Point] = field(default_factory=Point)
+    _pt2: Union[List, Tuple, Point] = field(default_factory=Point)
 
     def __post_init__(self):
         self.__validate()
@@ -45,6 +44,8 @@ class Rect(List):
         return getattr(self, self.__field_name[index], None)
         
     def __setitem__(self, index, value):
+        if isinstance(value, List) or isinstance(value, Tuple) or isinstance(value, Point):
+            value = Point(*value)
         setattr(self, self.__field_name[index], value)
     
     def __len__(self):
@@ -56,6 +57,21 @@ class Rect(List):
                 value = getattr(self, f.name)
                 assert len(value) == 2
                 setattr(self, f.name, Point(*value))
+    @property 
+    def pt1(self):
+        return self._pt1
+    
+    @pt1.setter
+    def pt1(self, value):
+        self._pt1 = Point(*value)
+
+    @property 
+    def pt2(self):
+        return self._pt2
+    
+    @pt2.setter
+    def pt2(self, value):
+        self._pt2 = Point(*value)
 
     def get_size(self):
         h = abs(self.pt2[1] - self.pt1[0])

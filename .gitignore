@@ -2,7 +2,7 @@
 *.ipynb
 *__pycache__/
 *.ipynb_checkpoints
-./test.py
+test.py
 
 
 # Compiled source #
