@@ -33,8 +33,9 @@ class ImReader(ImReaderABC):
         self.logger = logger
         self.filter_rules = self._get_filters()
         self._image_path_list = []
+        self._read()
 
-    def read(self):
+    def _read(self):
         p = Path(self.images_path)
         self._image_path_list = [
             i for i in p.iterdir() if i.suffix in self.filter_ext
