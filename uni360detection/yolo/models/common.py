@@ -12,8 +12,8 @@ import torch.nn as nn
 from PIL import Image
 from torch.cuda import amp
 
-from utils.datasets import exif_transpose, letterbox
-from utils.general import (
+from uni360detection.yolo.utils.datasets import exif_transpose, letterbox
+from uni360detection.yolo.utils.general import (
     non_max_suppression,
     make_divisible,
     scale_coords,
@@ -21,8 +21,8 @@ from utils.general import (
     xyxy2xywh,
     save_one_box,
 )
-from utils.plots import colors, plot_one_box
-from utils.torch_utils import time_synchronized
+from uni360detection.yolo.utils.plots import colors, plot_one_box
+from uni360detection.yolo.utils.torch_utils import time_synchronized
 
 
 def autopad(k, p=None):  # kernel, padding

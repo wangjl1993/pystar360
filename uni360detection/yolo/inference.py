@@ -1,16 +1,16 @@
-from weakref import ref
 import torch
 import numpy as np
 
-from models.experimental import attempt_load
-from yolo.utils.general import (
+from uni360detection.yolo.models.experimental import attempt_load
+from uni360detection.yolo.utils.general import (
     check_img_size,
     non_max_suppression,
     scale_coords,
     xyxy2xywh,
 )
-from yolo.utils.augmentations import letterbox
-from yolo.utils.torch_utils import time_synchronized
+from uni360detection.yolo.utils.augmentations import letterbox
+from uni360detection.yolo.utils.torch_utils import time_synchronized
+
 
 def yolo_xywh2xyxy(points, sx, sy, ref_h, ref_w):
 
@@ -114,3 +114,6 @@ class YoloInfer:
             self.logger.info(f"{s}Done. ({t2 - t1:.3f}s)")
 
         return output
+
+if __name__ == "__main__":
+    infer = YoloInfer("", "")
