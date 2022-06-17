@@ -11,6 +11,10 @@ from uni360detection.yolo.utils.general import (
 from uni360detection.yolo.utils.augmentations import letterbox
 from uni360detection.yolo.utils.torch_utils import time_synchronized
 
+import sys 
+from pathlib import Path
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[0].as_posix())
 
 def yolo_xywh2xyxy(points, sx, sy, ref_h, ref_w):
 

@@ -76,12 +76,18 @@ def frame2cutpoints(l, frame, length):
     shift, pixel = frame2index(frame, length)
     return (l[shift], pixel)
 
+def get_img_size2(h, w, resize_ratio):
+    """return image size according to a given ratio"""
+    h = int(h * resize_ratio)
+    w = int(w * resize_ratio)
+    return h, w
 
 def read_segmented_img(l, startline, endline, imread, imgsz=None, axis=1):
     """Read continuous image frame and concatenate into one image"""
     assert startline <= endline, "startline <= endline"
     if imgsz:
         img_h, img_w = imgsz
+        img_h, img_w = get_img_size2(img_h, img_w, imread.resize_ratio)
     else:
         img_h, img_w = imread(l[0]).shape
 
@@ -96,13 +102,12 @@ def read_segmented_img(l, startline, endline, imread, imgsz=None, axis=1):
     end_f = l[end_idx]
 
     if axis == 0:
-        img = imread(start_f)[:, start_p:]
-    else:
         img = imread(start_f)[start_p:, :]
+    else:
+        img = imread(start_f)[:, start_p:]
 
     if start_idx != end_idx:
         tmp_l = l[start_idx + 1:end_idx]
-
         for f in tmp_l:
             tmp_img = imread(f)
             if axis == 0:
@@ -112,7 +117,7 @@ def read_segmented_img(l, startline, endline, imread, imgsz=None, axis=1):
             else:
                 if tmp_img.shape[1] < img_w:
                     addition = np.zeros((img_h, img_w - tmp_img.shape[1]))
-                    tmp_img = np.concatenate((tmp_img, addition), axis=1)
+                    tmp_img = np.concatenate((tmp_img, addition), axis=axis)
 
             img = np.concatenate((img, tmp_img), axis=axis)
 
@@ -194,11 +199,7 @@ def get_img_size(f, img_read):
     return img_read(f).shape
 
 
-def get_img_size2(h, w, resize_ratio):
-    """return image size according to a given ratio"""
-    h = int(h * resize_ratio)
-    w = int(w * resize_ratio)
-    return h, w
+
 
 
 def get_rect_area(points):

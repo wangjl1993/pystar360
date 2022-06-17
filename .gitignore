@@ -2,8 +2,11 @@
 *.ipynb
 *__pycache__/
 *.ipynb_checkpoints
-test.py
-
+dev_CRH1A-A.yaml
+dev_CR300AF.yaml
+dev_test_api.py
+dataset
+CRH1A-A/
 
 # Compiled source #
 ###################
