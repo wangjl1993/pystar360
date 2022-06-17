@@ -155,17 +155,19 @@ class BBox:
                 setattr(self, f.name, Rect(*value))
 
 @dataclass
-class Carriage:
+class CarriageInfo:
     path: str = ""
     startline: float = 0.
     endline: float = 0.
 
 @dataclass
-class QTrain_info:
-    train_sn: str = ""
-    major_train_code: str = ""
-    minor_train_code: str = ""
-    channel: str = ""
-    carriage: int = 0
-    test_train: Carriage = field(default_factory=Carriage)
-    hist_train: Optional[Carriage] = field(default_factory=Carriage)
+class QTrainInfo:
+    major_train_code: str = "" # CRH1A
+    minor_train_code: str = "" # CRH1A-A
+    train_num: str= "" # 1178, CRH1A-A 1178
+    train_sn: str = "" # 2101300005, date or uid 
+    channel: str = "" # 12,4,17...
+    carriage: int = 0 # 1-8
+    test_train: CarriageInfo = field(default_factory=CarriageInfo)
+    hist_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)
+    dir: Optional[int] = 0

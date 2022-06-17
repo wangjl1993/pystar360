@@ -55,33 +55,49 @@ def find_approximate_single_end(l,
     return idx
 
 
+def select_best_cutpoints(candidates, method):
+     # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence, 6:startline, 7:endline
+    if method == "width":
+        max_candidate = max(candidates, key=lambda x: x[3]) # max width
+    elif method == "height":
+        max_candidate = max(candidates, key=lambda x: x[4]) # max height
+    elif method == "area":
+        max_candidate = max(candidates, key=lambda x: x[4] * x[3]) # max area
+    elif method == "confidence":
+        max_candidate = max(candidates, key=lambda x: x[5]) # max confidence
+    else:
+        raise NotImplementedError(f">>> method {method} is not implemented")
+    return max_candidate
+
 class Splitter:
     def __init__(self,
+                 qtrain_info,
                  config,
                  images_path_list,
-                 major_train_code,
-                 minor_train_code,
-                 train_sn,
-                 channel,
-                 carriage,
                  train_library_path,
                  device,
                  logger=None):
         
+        self.qtrain_info = qtrain_info 
+        self.major_train_code = qtrain_info.major_train_code
+        self.minor_train_code = qtrain_info.minor_train_code
+        self.train_num = qtrain_info.train_num
+        self.train_sn = qtrain_info.train_sn
+        self.channel = qtrain_info.channel
+        self.carriage = qtrain_info.carriage
+        
         self.config = config
+        self.axis = config.axis
+
         self.images_path_list = images_path_list
-        self.major_train_code = major_train_code
-        self.minor_train_code = minor_train_code
-        self.train_sn = train_sn
-        self.channel = channel
-        self.carriage = carriage
+
+        train_library_path = Path(train_library_path) / (
+            qtrain_info.major_train_code + ".yaml")
+        self.train_dict = read_yaml(str(
+            train_library_path))[self.minor_train_code]
+
         self.device = device
         self.logger = logger
-        self.axis = config.axis
-        self.train_library_path = Path(train_library_path) / (
-            major_train_code + ".yaml")
-        self.train_dict = read_yaml(str(
-            self.train_library_path)).minor_train_code
 
         self._cutframe_idx = None
     
@@ -110,9 +126,14 @@ class Splitter:
     def cutframe_idx(self, cutframe_idx):
         self._cutframe_idx = cutframe_idx
 
+    def update_cutframe_idx(self, *cutframe_idx):
+        assert len(cutframe_idx) == 2
+        self.cutframe_idx = cutframe_idx
+
     def get_specific_cutpoints(self,
-                               offset=1,
+                               range=2,
                                shift=3,
+                               offset=0, 
                                imread=imread_quarter,
                                save_path=None):
         if self.cutframe_idx is None:
@@ -131,11 +152,16 @@ class Splitter:
         _cutpoints = []
         for p, cutframe_idx in enumerate(self.cutframe_idx):
             possible_outputs = []
+            if p == 0:
+                cutframe_idx -= offset 
+            else:
+                cutframe_idx += offset 
+
             for i in range(shift):
                 index = cutframe_idx + i - (shift // 2)
-                startline = int(max(0, index - offset))
+                startline = int(max(0, index - range))
                 endline = int(
-                    min(len(self.images_path_list), index + offset + 1))
+                    min(len(self.images_path_list), index + range + 1))
                 img = read_segmented_img(self.images_path_list, startline,
                                          endline, imread, axis=self.axis)
                 if save_path:
@@ -143,9 +169,10 @@ class Splitter:
                     cv2.imwrite(str(fname), img)
                 img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
                 
-                temp_outputs = model.infer(conf_thres=self.config.model.conf_thres, iou_thres=self.config.model.iou_thres)
+                temp_outputs = model.infer(img, conf_thres=self.config.model.conf_thres, iou_thres=self.config.model.iou_thres)
                 for out in temp_outputs:
                      # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence, 6:startline, 7:endline
+                    out = list(out)
                     possible_outputs.append(out+[startline, endline])
 
             new_cutpoints = self._post_process(possible_outputs, p)
@@ -155,27 +182,37 @@ class Splitter:
 
     def _post_process(self, outputs, p):
         # return specific cutpoints
-        outputs = [i for i in outputs if self.config.model.label_converter[int(i[0])] == "end"]
+        if (self.carriage == 1 and p == 0 ) or (self.carriage == self.train_dict.num and p == 1):
+            outputs = [i for i in outputs if self.config.model.label_translator[int(i[0])] == "end"]
+        else:
+            outputs = [i for i in outputs if self.config.model.label_translator[int(i[0])] == "mid"]
+
         if len(outputs) < 1:
             raise ValueError("Can't find cut line for splitting carriage.")
-        max_output = max(outputs, key=lambda x: x[5]) # 5: max confidence
+        
+        max_output = select_best_cutpoints(outputs, self.config.method)
         startline = max_output[6] #6: startline
         endline = max_output[7] #7: endline 
-
         if self.carriage == 1 or self.carriage == self.train_dict.num: 
             # first carraige or last carriage 
             if self.axis == 1:
                 # x axis cutline 
                 point = yolo_xywh2xyxy(max_output[1:5], startline, 0, 1., endline-startline)
                 if p == 0:
-                    return point[0][0]
+                    if self.carriage == self.train_dict.num:
+                        return point[1][0]
+                    else:
+                        return point[0][0]
                 elif p == 1:
                     return point[1][0]
             elif self.axis == 0:
                 # y axis cutline
                 point = yolo_xywh2xyxy(max_output[1:5], 0, startline, endline-startline, 1.)
                 if p == 0:
-                    return point[0][1]
+                    if self.carriage == self.train_dict.num:
+                        return point[1][1]
+                    else:
+                        return point[0][1]
                 elif p == 1:
                     return point[1][1]
             else:
@@ -191,19 +228,23 @@ class Splitter:
             else:
                 raise ValueError(f"Axis {self.axis} is not available.")
 
-    def _generate_cutpoints_img(self, save_path, imread=imread_quarter, aux="", offset=1, shift=3):
+    def _generate_cutpoints_img(self, save_path, imread=imread_quarter, aux="", range=2, shift=3, offset=0):
         if self.cutframe_idx is None:
             raise ValueError("Please provide cutframe index 轴信息.")
 
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
         for p, cutframe_idx in enumerate(self.cutframe_idx):
+            if p == 0:
+                cutframe_idx -= offset 
+            else:
+                cutframe_idx += offset 
             for i in range(shift):
                 index = cutframe_idx + i - (shift // 2)
-                startline = int(max(0, index - offset))
+                startline = int(max(0, index - range))
                 endline = int(
-                    min(len(self.images_path_list), index + offset + 1))
+                    min(len(self.images_path_list), index + range + 1))
                 img = read_segmented_img(self.images_path_list, startline,
                                          endline, imread, axis=self.axis)
-                fname = save_path / f"{aux}_{self.train_sn}_{self.minor_train_code}_{self.channel}_{self.car}_{p}_{i}.jpg"
+                fname = save_path / f"{aux}_{self.minor_train_code}_{self.train_num}_{self.train_sn}_{self.channel}_{self.carriage}_{p}_{i}.jpg"
                 cv2.imwrite(str(fname), img)
