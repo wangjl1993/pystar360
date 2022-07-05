@@ -170,4 +170,4 @@ class QTrainInfo:
     carriage: int = 0 # 1-8
     test_train: CarriageInfo = field(default_factory=CarriageInfo)
     hist_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)
-    dir: Optional[int] = 0
+    direction: Optional[int] = 0

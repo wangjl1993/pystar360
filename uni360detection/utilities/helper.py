@@ -53,6 +53,11 @@ def concat_str(*args, separator="_"):
     return separator.join(args)
 
 
+def split_str(mystr, separator="="):
+    """Split string"""
+    return mystr.strip(separator).split(separator)
+
+
 def frame2index(frame, length):
     """Frame to index and pixel shift"""
     shift = int(frame)

@@ -3,6 +3,8 @@ import re
 from pathlib import Path
 from abc import ABCMeta, abstractclassmethod
 
+from uni360detection.utilities.helper import get_img_size, imread_full
+
 __all__ = ["ImReader"]
 
 
@@ -91,3 +93,6 @@ class ImReader(ImReaderABC):
 
     def __len__(self):
         return len(self._image_path_list)
+
+    def _get_img_size(self, imread=imread_full):
+        return get_img_size(self._image_path_list[0], imread)
