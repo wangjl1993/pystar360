@@ -1,12 +1,3 @@
-
-SETTINGS:
-  VIZ: True  # visualize output 
-  VIZ_LV: 1  # visualize level 
-  NEED_HIST: FALSE # need HISTORY or not
-  TRAIN_LIB_PATH: "/home/casxm/albert/uni360/uni360detection/train_library"
-  LOCAL_LOG_PATH: "/log"
-
-
 channel_params:
   "12": 
     img_w: 4000
