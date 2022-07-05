@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 from skimage.metrics import structural_similarity as ssim
 
+import uni360detection.base.global_settings as SETTINGS
 from uni360detection.utilities.helper import *
 from uni360detection.utilities.fileManger import *
 from uni360detection.yolo.inference import YoloInfer, yolo_xywh2xyxy
@@ -131,7 +132,7 @@ class Splitter:
         self.cutframe_idx = cutframe_idx
 
     def get_specific_cutpoints(self,
-                               range=2,
+                               cover_range=2,
                                shift=3,
                                offset=0, 
                                imread=imread_quarter,
@@ -159,9 +160,9 @@ class Splitter:
 
             for i in range(shift):
                 index = cutframe_idx + i - (shift // 2)
-                startline = int(max(0, index - range))
+                startline = int(max(0, index - cover_range))
                 endline = int(
-                    min(len(self.images_path_list), index + range + 1))
+                    min(len(self.images_path_list), index + cover_range + 1))
                 img = read_segmented_img(self.images_path_list, startline,
                                          endline, imread, axis=self.axis)
                 if save_path:
@@ -228,7 +229,7 @@ class Splitter:
             else:
                 raise ValueError(f"Axis {self.axis} is not available.")
 
-    def _generate_cutpoints_img(self, save_path, imread=imread_quarter, aux="", range=2, shift=3, offset=0):
+    def _generate_cutpoints_img(self, save_path, imread=imread_quarter, aux="", cover_range=2, shift=3, offset=0):
         if self.cutframe_idx is None:
             raise ValueError("Please provide cutframe index 轴信息.")
 
@@ -241,10 +242,11 @@ class Splitter:
                 cutframe_idx += offset 
             for i in range(shift):
                 index = cutframe_idx + i - (shift // 2)
-                startline = int(max(0, index - range))
+                startline = int(max(0, index - cover_range))
                 endline = int(
-                    min(len(self.images_path_list), index + range + 1))
+                    min(len(self.images_path_list), index + cover_range + 1))
                 img = read_segmented_img(self.images_path_list, startline,
                                          endline, imread, axis=self.axis)
                 fname = save_path / f"{aux}_{self.minor_train_code}_{self.train_num}_{self.train_sn}_{self.channel}_{self.carriage}_{p}_{i}.jpg"
                 cv2.imwrite(str(fname), img)
+                print(f">>> {fname}.")
