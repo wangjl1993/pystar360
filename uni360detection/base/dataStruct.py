@@ -101,15 +101,22 @@ class Rect(List):
 @dataclass
 class BBox:
     label: str = "" # xxx-#
-    order: int = 0
+    index: int = 0 # 
     name: str = "" # xxx item name 
     num2check: int = 0 # # number of item to check 
     _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
     _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
     _proposal_region: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    score: float = 0
-    is_defect: int = 0
+    score: float = 0. # confidence level 
+    conf_thres: float = 0. # confidence threshold 
+    is_defect: int = 0. # if it is defect, 0 is ok, 1 is ng
+    # optional 
+    value: float = 0. # for a measurement method 
+    unit: str = "" # unit, like mm, cm if needed 
+    defect_type: int = 0 # defect type if needed 
+    description: str = "" # defect description 
+    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed 
+    _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed 
 
     def __post_init__(self):
         self.__validate()
@@ -146,10 +153,17 @@ class BBox:
     def proposal_region(self, value):
         self._proposal_region = Rect(*value)
 
+    @property 
+    def hist_rect(self):
+        return self._hist_rect
+    
+    @hist_rect.setter
+    def hist_rect(self, value):
+        self._hist_rect = Rect(*value)
     
     def __validate(self):
         for f in fields(self):
-            if f.name in ("temp_rect", "curr_rect", "proposal_rect", "proposal_region"):
+            if f.name in ("temp_rect", "curr_rect", "proposal_rect", "proposal_region", "hist_rect"):
                 value = getattr(self, f.name)
                 assert len(value) == 2
                 setattr(self, f.name, Rect(*value))
