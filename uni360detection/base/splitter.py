@@ -1,12 +1,11 @@
 
-import numpy as np
-
 from pathlib import Path
-from skimage.metrics import structural_similarity as ssim
 
+import numpy as np
 import uni360detection.base.global_settings as SETTINGS
-from uni360detection.utilities.helper import *
+from skimage.metrics import structural_similarity as ssim
 from uni360detection.utilities.fileManger import *
+from uni360detection.utilities.helper import *
 from uni360detection.yolo.inference import YoloInfer, yolo_xywh2xyxy
 
 
@@ -73,12 +72,13 @@ def select_best_cutpoints(candidates, method):
 class Splitter:
     def __init__(self,
                  qtrain_info,
-                 config,
+                 local_params,
                  images_path_list,
                  train_library_path,
                  device,
                  logger=None):
         
+        # query information 
         self.qtrain_info = qtrain_info 
         self.major_train_code = qtrain_info.major_train_code
         self.minor_train_code = qtrain_info.minor_train_code
@@ -87,9 +87,12 @@ class Splitter:
         self.channel = qtrain_info.channel
         self.carriage = qtrain_info.carriage
         
-        self.config = config
-        self.axis = config.axis
+        # local params 
+        self.params = local_params
+        self.axis = local_params.axis
+        self.var_threshold = local_params.splitter.get("var_threshold", 1)
 
+        # images list 
         self.images_path_list = images_path_list
 
         train_library_path = Path(train_library_path) / (
@@ -102,14 +105,14 @@ class Splitter:
 
         self._cutframe_idx = None
     
-    def get_approximate_cutframe_idxes(self, var_threshold=1):
+    def get_approximate_cutframe_idxes(self):
         head_appro_idx = find_approximate_single_end(
             self.images_path_list,
-            var_threshold=var_threshold,
+            var_threshold=self.var_threshold,
             axis=self.axis)
         tail_appro_idx = find_approximate_single_end(
             self.images_path_list,
-            var_threshold=var_threshold,
+            var_threshold=self.var_threshold,
             reverse=True,
             axis=self.axis)
         n_frames = tail_appro_idx - head_appro_idx + 1
@@ -142,9 +145,9 @@ class Splitter:
         assert len(self.cutframe_idx) == 2
 
         # load model
-        model = YoloInfer(self.config.model.model_path,
+        model = YoloInfer(self.params.splitter.model_path,
                           self.device,
-                          self.config.model.imgsz,
+                          self.params.splitter.imgsz,
                           logger=self.logger)
         if save_path:
             save_path = Path(save_path)
@@ -170,7 +173,7 @@ class Splitter:
                     cv2.imwrite(str(fname), img)
                 img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
                 
-                temp_outputs = model.infer(img, conf_thres=self.config.model.conf_thres, iou_thres=self.config.model.iou_thres)
+                temp_outputs = model.infer(img, conf_thres=self.params.splitter.conf_thres, iou_thres=self.params.splitter.iou_thres)
                 for out in temp_outputs:
                      # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence, 6:startline, 7:endline
                     out = list(out)
@@ -184,14 +187,14 @@ class Splitter:
     def _post_process(self, outputs, p):
         # return specific cutpoints
         if (self.carriage == 1 and p == 0 ) or (self.carriage == self.train_dict.num and p == 1):
-            outputs = [i for i in outputs if self.config.model.label_translator[int(i[0])] == "end"]
+            outputs = [i for i in outputs if self.params.splitter.label_translator[int(i[0])] == "end"]
         else:
-            outputs = [i for i in outputs if self.config.model.label_translator[int(i[0])] == "mid"]
+            outputs = [i for i in outputs if self.params.splitter.label_translator[int(i[0])] == "mid"]
 
         if len(outputs) < 1:
             raise ValueError("Can't find cut line for splitting carriage.")
         
-        max_output = select_best_cutpoints(outputs, self.config.method)
+        max_output = select_best_cutpoints(outputs, self.params.splitter.method)
         startline = max_output[6] #6: startline
         endline = max_output[7] #7: endline 
         if self.carriage == 1 or self.carriage == self.train_dict.num: 

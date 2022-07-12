@@ -1,7 +1,6 @@
 import re
-
-from pathlib import Path
 from abc import ABCMeta, abstractclassmethod
+from pathlib import Path
 
 from uni360detection.utilities.helper import get_img_size, imread_full
 
