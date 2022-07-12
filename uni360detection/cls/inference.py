@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import torch
-from torchvision.models import models
+import torchvision.models as models
 
 
 class ClsInfer:
@@ -36,7 +36,10 @@ class ClsInfer:
         # img = get_img_array(img)
         # img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         # img = np.ascontiguousarray(img)
-        img = torch.from_numpy(img).to(self.device)
+        if isinstance(img, np.ndarray):
+            img = torch.from_numpy(img).to(self.device)
+        else:
+            img = img.to(self.device)
         img = img.float()
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
