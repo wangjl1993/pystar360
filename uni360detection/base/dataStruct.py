@@ -1,5 +1,17 @@
-from dataclasses import dataclass,  fields, field, is_dataclass
-from typing import List, Optional, Union, Tuple
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+@File: dataStruct.py
+@FilePath: ~/albert/uni360/uni360detection/base/dataStruct.py
+@Time: 2022/07/11 20:37:39
+@Author: Albert Yu
+@EditionHistory: {2022/07/11}-{Albert}-{xxx@xxx.com}
+@Description: 
+"""
+# start code
+
+from dataclasses import dataclass, field, fields, is_dataclass
+from typing import List, Optional, Tuple, Union
 
 
 @dataclass
@@ -100,23 +112,24 @@ class Rect(List):
 
 @dataclass
 class BBox:
-    label: str = "" # xxx-#
-    index: int = 0 # 
+    label: str = "" # xxx#2
+    index: int = 0 # order
     name: str = "" # xxx item name 
     num2check: int = 0 # # number of item to check 
-    _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    _proposal_region: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    score: float = 0. # confidence level 
+    _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # rect position in template 
+    _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # rect position in current train 
+    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # proposal rect position
+    _proposal_region: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed 
+    _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed 
+    conf_score: float = 0. # confidence level 
     conf_thres: float = 0. # confidence threshold 
     is_defect: int = 0. # if it is defect, 0 is ok, 1 is ng
     # optional 
     value: float = 0. # for a measurement method 
+    value_thres: float = 0.
     unit: str = "" # unit, like mm, cm if needed 
     defect_type: int = 0 # defect type if needed 
     description: str = "" # defect description 
-    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed 
-    _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed 
 
     def __post_init__(self):
         self.__validate()
