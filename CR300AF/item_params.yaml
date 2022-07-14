@@ -1,0 +1,8 @@
+label_name:
+  func: xxxx
+  params:
+    model_path: xx
+    imgsz: 640
+    conf_thres: 0.45
+    iou_thres: 0.45
+    only_check_num: False
