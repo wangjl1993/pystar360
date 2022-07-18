@@ -1,18 +1,15 @@
-import torch
-import numpy as np
+import sys
+from pathlib import Path
 
+import numpy as np
+import torch
 from uni360detection.yolo.models.experimental import attempt_load
-from uni360detection.yolo.utils.general import (
-    check_img_size,
-    non_max_suppression,
-    scale_coords,
-    xyxy2xywh,
-)
 from uni360detection.yolo.utils.augmentations import letterbox
+from uni360detection.yolo.utils.general import (check_img_size,
+                                                non_max_suppression,
+                                                scale_coords, xyxy2xywh)
 from uni360detection.yolo.utils.torch_utils import time_synchronized
 
-import sys 
-from pathlib import Path
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())
 
@@ -21,6 +18,24 @@ def yolo_xywh2xyxy(points, sx, sy, ref_h, ref_w):
     assert len(points) == 4 , "length is 4, ctrx, ctry, w, h"
     x, y, w, h = points 
 
+    half_h = h / 2.
+    half_w = w / 2.
+
+    x_left = sx + (x - half_w) * ref_w
+    y_top = sy + (y - half_h) * ref_h
+    x_right = sx + (x + half_w) * ref_w
+    y_bottom = sy + (y + half_h) * ref_h
+
+    return [(x_left, y_top), (x_right, y_bottom)]
+
+def yolo_xywh2xyxy_v2(new_points, ref_points):
+
+    assert len(new_points) == 4 , "length is 4, ctrx, ctry, w, h"
+    sx, sy = ref_points[0]
+    ref_w = ref_points[1][0] - ref_points[0][0]
+    ref_h = ref_points[1][1] - ref_points[0][1]
+
+    x, y, w, h = new_points 
     half_h = h / 2.
     half_w = w / 2.
 
