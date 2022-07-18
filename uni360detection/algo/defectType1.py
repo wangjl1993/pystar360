@@ -12,11 +12,17 @@ from uni360detection.utilities.helper import crop_segmented_rect, frame2rect
 
 @algoDecorator
 class DetectItemsMissing(algoBase):
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, test_img=None, test_startline=None, img_h=None, img_w=None) -> Any:
         # if empty, return empty 
         if not self.item_bboxes_list:
             return []
 
+        # sorting
+        if self.axis == 0:
+            item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
+        else:
+            item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
+        
         # initialize model 
         model = YoloInfer(self.item_params["model_path"], self.device, 
                         imgsz=self.item_params["imgsz"], logger=self.logger)
@@ -32,8 +38,8 @@ class DetectItemsMissing(algoBase):
             # get proposal rect 
             proposal_rect_f = box.proposal_rect 
             # convert it to local rect point 
-            proposal_rect_p = frame2rect(proposal_rect_f, self.test_startline, self.img_h, self.img_w, axis=self.axis)
-            img = crop_segmented_rect(self.test_img, proposal_rect_p)
+            proposal_rect_p = frame2rect(proposal_rect_f, test_startline, img_h, img_w, axis=self.axis)
+            img = crop_segmented_rect(test_img, proposal_rect_p)
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
             # infer
