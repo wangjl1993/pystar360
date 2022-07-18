@@ -1,18 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-@File: dataStruct.py
-@FilePath: ~/albert/uni360/uni360detection/base/dataStruct.py
-@Time: 2022/07/11 20:37:39
-@Author: Albert Yu
-@EditionHistory: {2022/07/11}-{Albert}-{xxx@xxx.com}
-@Description: 
-"""
-# start code
-
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import List, Optional, Tuple, Union
-
+from uni360detection.utilities.helper import get_label_num2check
 
 @dataclass
 class Point(List):
@@ -112,24 +100,27 @@ class Rect(List):
 
 @dataclass
 class BBox:
-    label: str = "" # xxx#2
-    index: int = 0 # order
-    name: str = "" # xxx item name 
-    num2check: int = 0 # # number of item to check 
-    _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # rect position in template 
-    _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # rect position in current train 
-    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # proposal rect position
-    _proposal_region: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed 
-    _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed 
-    conf_score: float = 0. # confidence level 
-    conf_thres: float = 0. # confidence threshold 
-    is_defect: int = 0. # if it is defect, 0 is ok, 1 is ng
+    label: str = "" # xxx#2 比如xxls=3 就是name=‘xxls’，num2check=3，至少需要检查3个xxls；或xxls 就是name=‘xxls’，num2check（default=1，默认至少检测1个
+    index: int = 0 # order, 在这辆车，从左到右，或者从上到下，第几个这样的item
+    name: str = "" # xxx item name label的名字
+    num2check: int = 1 # # number of item to check # 需要检测的个数
+    _orig_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # optional， 原目标物多大
+    _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # rect position in template, 检测框（映射直接用的框）; 比如用yolo的话，就需要把orig_rect扩大一定大小；不需要的话，就是目标物框
+    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # proposal rect position，初步映射到测试图的框，
+    _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # rect position in current train 如果有进一步检测，返回yolo精确框；不需要的话，等于proposal_rect
+    _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed, 预留历史图的框，一般不需要，optional
+    conf_score: float = 0. # confidence level 无论什么方法，计算出来的置信度
+    conf_thres: float = 0. # confidence threshold 置信度的评判阈值是多少
+    is_defect: int = 0. # if it is defect, 0 is ok, 1 is ng 是否故障
     # optional 
-    value: float = 0. # for a measurement method 
-    value_thres: float = 0.
-    unit: str = "" # unit, like mm, cm if needed 
-    defect_type: int = 0 # defect type if needed 
-    description: str = "" # defect description 
+    value: Union[float, List] = 0. # for a measurement method 如果使用度量方法，测试的数值是多少
+    value_thres: float = 0. # 度量的阈值是多少
+    unit: str = "" # unit, like mm, cm if needed  # 单位是多少
+    defect_type: int = 0 # defect type if needed # 故障类型是什么，预留
+    description: str = "" # defect description # 故障说明，可以写或者不写 预留
+    is_3ddefect: int = 0
+    value_3d: float = 0
+    value_3dthres: Union[float, List] = 0. 
 
     def __post_init__(self):
         self.__validate()
@@ -159,12 +150,12 @@ class BBox:
         self._proposal_rect = Rect(*value)
 
     @property 
-    def proposal_region(self):
-        return self._proposal_region
+    def orig_rect(self):
+        return self._orig_rect
     
-    @proposal_region.setter
-    def proposal_region(self, value):
-        self._proposal_region = Rect(*value)
+    @orig_rect.setter
+    def orig_rect(self, value):
+        self._orig_rect = Rect(*value)
 
     @property 
     def hist_rect(self):
@@ -176,16 +167,32 @@ class BBox:
     
     def __validate(self):
         for f in fields(self):
-            if f.name in ("temp_rect", "curr_rect", "proposal_rect", "proposal_region", "hist_rect"):
+            if f.name in ("temp_rect", "curr_rect", "proposal_rect", "orig_rect", "hist_rect"):
                 value = getattr(self, f.name)
                 assert len(value) == 2
                 setattr(self, f.name, Rect(*value))
+
+def bbox_formater(bboxes):
+    """convert to data struct"""
+    # bboxes: dict
+    bboxes = sorted(bboxes, key=lambda x: x["rect"][0][0])
+    
+    new_bboxes = []
+    for b in bboxes:
+        name, num2check = get_label_num2check(b["label"])
+        box = BBox(label=b["label"], index=b["index"], name=name, num2check=num2check)
+        box.temp_rect = b["rect"]
+        new_bboxes.append(box)
+    
+    return new_bboxes
 
 @dataclass
 class CarriageInfo:
     path: str = ""
     startline: float = 0.
     endline: float = 0.
+    first_axis_idx: int = 0
+    second_axis_idx: int = 0
 
 @dataclass
 class QTrainInfo:
@@ -194,7 +201,8 @@ class QTrainInfo:
     train_num: str= "" # 1178, CRH1A-A 1178
     train_sn: str = "" # 2101300005, date or uid 
     channel: str = "" # 12,4,17...
-    carriage: int = 0 # 1-8
+    carriage: int = 0 # 1-8 or 1-16
     test_train: CarriageInfo = field(default_factory=CarriageInfo)
     hist_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)
     direction: Optional[int] = 0
+    Pantograph_state: int = 0

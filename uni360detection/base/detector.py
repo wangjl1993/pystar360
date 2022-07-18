@@ -28,13 +28,13 @@ class Detector:
         self.axis = axis 
         self.logger = logger 
 
-    def update_test_img_info(self, img, startline, img_w, img_h):
-        self.test_img = img
-        self.test_startline = startline
-        self.img_w = img_w
-        self.img_h = img_h
+    # def update_test_img_info(self, img, startline, img_w, img_h):
+    #     self.test_img = img
+    #     self.test_startline = startline
+    #     self.img_w = img_w
+    #     self.img_h = img_h
 
-    def detect_items(self, item_bboxes):
+    def detect_items(self, item_bboxes, test_img, test_startline, img_w, img_h):
         item_bboxes_dict = bboxes_collector(item_bboxes)
 
         if self.logger:
@@ -66,15 +66,14 @@ class Detector:
                     continue 
 
                 func = func_obj(item_bboxes_list=item_bboxes_list, 
-                                         test_img = self.test_img, 
-                                         test_startline = self.test_startline,
-                                         img_h = self.img_h, 
-                                         img_w = self.img_w, 
-                                         device = self.device,
-                                         logger = self.logger,
-                                         item_params = item_params.params)
+                                device = self.device,
+                                logger = self.logger,
+                                item_params = item_params.params)
                 # run func
-                local_item_bboxes = func()
+                local_item_bboxes = func(test_img = test_img, 
+                                         test_startline = test_startline,
+                                         img_h = img_h, 
+                                         img_w = img_w)
 
         new_item_bboxes.extend(local_item_bboxes)
         if self.logger:

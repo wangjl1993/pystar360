@@ -2,7 +2,6 @@
 from pathlib import Path
 
 import numpy as np
-import uni360detection.base.global_settings as SETTINGS
 from skimage.metrics import structural_similarity as ssim
 from uni360detection.utilities.fileManger import *
 from uni360detection.utilities.helper import *
@@ -76,6 +75,7 @@ class Splitter:
                  images_path_list,
                  train_library_path,
                  device,
+                 axis=1,
                  logger=None):
         
         # query information 
@@ -89,18 +89,16 @@ class Splitter:
         
         # local params 
         self.params = local_params
-        self.axis = local_params.axis
-        self.var_threshold = local_params.splitter.get("var_threshold", 1)
+        self.var_threshold = local_params.get("var_threshold", 1)
 
         # images list 
         self.images_path_list = images_path_list
 
-        train_library_path = Path(train_library_path) / (
-            qtrain_info.major_train_code + ".yaml")
-        self.train_dict = read_yaml(str(
-            train_library_path))[self.minor_train_code]
+        train_library_path = Path(train_library_path) / (qtrain_info.major_train_code + ".yaml")
+        self.train_dict = read_yaml(str(train_library_path))[self.minor_train_code]
 
         self.device = device
+        self.axis = axis
         self.logger = logger
 
         self._cutframe_idx = None
@@ -145,9 +143,9 @@ class Splitter:
         assert len(self.cutframe_idx) == 2
 
         # load model
-        model = YoloInfer(self.params.splitter.model_path,
+        model = YoloInfer(self.params.model_path,
                           self.device,
-                          self.params.splitter.imgsz,
+                          self.params.imgsz,
                           logger=self.logger)
         if save_path:
             save_path = Path(save_path)
@@ -173,7 +171,7 @@ class Splitter:
                     cv2.imwrite(str(fname), img)
                 img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
                 
-                temp_outputs = model.infer(img, conf_thres=self.params.splitter.conf_thres, iou_thres=self.params.splitter.iou_thres)
+                temp_outputs = model.infer(img, conf_thres=self.params.conf_thres, iou_thres=self.params.iou_thres)
                 for out in temp_outputs:
                      # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence, 6:startline, 7:endline
                     out = list(out)
@@ -187,14 +185,14 @@ class Splitter:
     def _post_process(self, outputs, p):
         # return specific cutpoints
         if (self.carriage == 1 and p == 0 ) or (self.carriage == self.train_dict.num and p == 1):
-            outputs = [i for i in outputs if self.params.splitter.label_translator[int(i[0])] == "end"]
+            outputs = [i for i in outputs if self.params.label_translator[int(i[0])] == "end"]
         else:
-            outputs = [i for i in outputs if self.params.splitter.label_translator[int(i[0])] == "mid"]
+            outputs = [i for i in outputs if self.params.label_translator[int(i[0])] == "mid"]
 
         if len(outputs) < 1:
             raise ValueError("Can't find cut line for splitting carriage.")
         
-        max_output = select_best_cutpoints(outputs, self.params.splitter.method)
+        max_output = select_best_cutpoints(outputs, self.params.method)
         startline = max_output[6] #6: startline
         endline = max_output[7] #7: endline 
         if self.carriage == 1 or self.carriage == self.train_dict.num: 
