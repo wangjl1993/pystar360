@@ -50,22 +50,23 @@ class ImReader(ImReaderABC):
         self._image_path_list = sorted(self._image_path_list,
                                        key=lambda x:
                                        (int(re.sub("\D", "", x.name)), x))
+        
+        if len(self._image_path_list) != 0:
+            if self.check_files:
+                self._check_file()
 
-        if self.check_files:
-            self._check_file()
+            # console output
+            if self.verbose:
+                if self.logger:
+                    self.logger.info(
+                        f">>> The number of images listed in the given path: {self.__len__()}"
+                    )
+                else:
+                    print(
+                        f">>> The number of images listed in the given path: {self.__len__()}"
+                    )
 
-        # console output
-        if self.verbose:
-            if self.logger:
-                self.logger.info(
-                    f">>> The number of images listed in the given path: {self.__len__()}"
-                )
-            else:
-                print(
-                    f">>> The number of images listed in the given path: {self.__len__()}"
-                )
-
-        self._image_path_list = list(map(str, self._image_path_list))
+            self._image_path_list = list(map(str, self._image_path_list))
 
     def _check_file(self):
         # check if there is a missing file
