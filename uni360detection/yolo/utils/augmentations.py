@@ -1,13 +1,15 @@
-# YOLOv5 image augmentation functions
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
+"""
+Image augmentation functions
+"""
 
-import logging
+import math
 import random
 
 import cv2
-import math
 import numpy as np
 
-from uni360detection.yolo.utils.general import colorstr, segment2box, resample_segments, check_version
+from uni360detection.yolo.utils.general import LOGGER, check_version, colorstr, resample_segments, segment2box
 from uni360detection.yolo.utils.metrics import bbox_ioa
 
 
@@ -17,19 +19,23 @@ class Albumentations:
         self.transform = None
         try:
             import albumentations as A
-            check_version(A.__version__, '1.0.0')  # version requirement
+            check_version(A.__version__, '1.0.3', hard=True)  # version requirement
 
-            self.transform = A.Compose([
-                A.Blur(p=0.1),
-                A.MedianBlur(p=0.1),
-                A.ToGray(p=0.01)],
-                bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
+            T = [
+                A.Blur(p=0.01),
+                A.MedianBlur(p=0.01),
+                A.ToGray(p=0.01),
+                A.CLAHE(p=0.01),
+                A.RandomBrightnessContrast(p=0.0),
+                A.RandomGamma(p=0.0),
+                A.ImageCompression(quality_lower=75, p=0.0)]  # transforms
+            self.transform = A.Compose(T, bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels']))
 
-            logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
+            LOGGER.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
         except ImportError:  # package not installed, skip
             pass
         except Exception as e:
-            logging.info(colorstr('albumentations: ') + f'{e}')
+            LOGGER.info(colorstr('albumentations: ') + f'{e}')
 
     def __call__(self, im, labels, p=1.0):
         if self.transform and random.random() < p:
@@ -50,12 +56,12 @@ def augment_hsv(im, hgain=0.5, sgain=0.5, vgain=0.5):
         lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
         lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
 
-        img_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
-        cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR, dst=im)  # no return needed
+        im_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val)))
+        cv2.cvtColor(im_hsv, cv2.COLOR_HSV2BGR, dst=im)  # no return needed
 
 
 def hist_equalize(im, clahe=True, bgr=False):
-    # Equalize histogram on BGR image 'img' with img.shape(n,m,3) and range 0-255
+    # Equalize histogram on BGR image 'im' with im.shape(n,m,3) and range 0-255
     yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV if bgr else cv2.COLOR_RGB2YUV)
     if clahe:
         c = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -76,7 +82,7 @@ def replicate(im, labels):
         bh, bw = y2b - y1b, x2b - x1b
         yc, xc = int(random.uniform(0, h - bh)), int(random.uniform(0, w - bw))  # offset x, y
         x1a, y1a, x2a, y2a = [xc, yc, xc + bw, yc + bh]
-        im[y1a:y2a, x1a:x2a] = im[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
+        im[y1a:y2a, x1a:x2a] = im[y1b:y2b, x1b:x2b]  # im4[ymin:ymax, xmin:xmax]
         labels = np.append(labels, [[labels[i, 0], x1a, y1a, x2a, y2a]], axis=0)
 
     return im, labels
@@ -90,7 +96,7 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
 
     # Scale ratio (new / old)
     r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
-    if not scaleup:  # only scale down, do not scale up (for better test mAP)
+    if not scaleup:  # only scale down, do not scale up (for better val mAP)
         r = min(r, 1.0)
 
     # Compute padding
@@ -115,9 +121,16 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
     return im, ratio, (dw, dh)
 
 
-def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
+def random_perspective(im,
+                       targets=(),
+                       segments=(),
+                       degrees=10,
+                       translate=.1,
+                       scale=.1,
+                       shear=10,
+                       perspective=0.0,
                        border=(0, 0)):
-    # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
+    # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(0.1, 0.1), scale=(0.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
     height = im.shape[0] + border[0] * 2  # shape(h,w,c)
@@ -162,8 +175,8 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
     # Visualize
     # import matplotlib.pyplot as plt
     # ax = plt.subplots(1, 2, figsize=(12, 6))[1].ravel()
-    # ax[0].imshow(img[:, :, ::-1])  # base
-    # ax[1].imshow(img2[:, :, ::-1])  # warped
+    # ax[0].imshow(im[:, :, ::-1])  # base
+    # ax[1].imshow(im2[:, :, ::-1])  # warped
 
     # Transform label coordinates
     n = len(targets)
@@ -204,13 +217,13 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
     return im, targets
 
 
-def copy_paste(im, labels, segments, probability=0.5):
+def copy_paste(im, labels, segments, p=0.5):
     # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
     n = len(segments)
-    if probability and n:
+    if p and n:
         h, w, c = im.shape  # height, width, channels
         im_new = np.zeros(im.shape, np.uint8)
-        for j in random.sample(range(n), k=round(probability * n)):
+        for j in random.sample(range(n), k=round(p * n)):
             l, s = labels[j], segments[j]
             box = w - l[3], l[2], w - l[1], l[4]
             ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
@@ -223,35 +236,34 @@ def copy_paste(im, labels, segments, probability=0.5):
         result = cv2.flip(result, 1)  # augment segments (flip left-right)
         i = result > 0  # pixels to replace
         # i[:, :] = result.max(2).reshape(h, w, 1)  # act over ch
-        im[i] = result[i]  # cv2.imwrite('debug.jpg', img)  # debug
+        im[i] = result[i]  # cv2.imwrite('debug.jpg', im)  # debug
 
     return im, labels, segments
 
 
-def cutout(im, labels):
+def cutout(im, labels, p=0.5):
     # Applies image cutout augmentation https://arxiv.org/abs/1708.04552
-    h, w = im.shape[:2]
+    if random.random() < p:
+        h, w = im.shape[:2]
+        scales = [0.5] * 1 + [0.25] * 2 + [0.125] * 4 + [0.0625] * 8 + [0.03125] * 16  # image size fraction
+        for s in scales:
+            mask_h = random.randint(1, int(h * s))  # create random masks
+            mask_w = random.randint(1, int(w * s))
 
-    # create random masks
-    scales = [0.5] * 1 + [0.25] * 2 + [0.125] * 4 + [0.0625] * 8 + [0.03125] * 16  # image size fraction
-    for s in scales:
-        mask_h = random.randint(1, int(h * s))
-        mask_w = random.randint(1, int(w * s))
+            # box
+            xmin = max(0, random.randint(0, w) - mask_w // 2)
+            ymin = max(0, random.randint(0, h) - mask_h // 2)
+            xmax = min(w, xmin + mask_w)
+            ymax = min(h, ymin + mask_h)
 
-        # box
-        xmin = max(0, random.randint(0, w) - mask_w // 2)
-        ymin = max(0, random.randint(0, h) - mask_h // 2)
-        xmax = min(w, xmin + mask_w)
-        ymax = min(h, ymin + mask_h)
+            # apply random color mask
+            im[ymin:ymax, xmin:xmax] = [random.randint(64, 191) for _ in range(3)]
 
-        # apply random color mask
-        im[ymin:ymax, xmin:xmax] = [random.randint(64, 191) for _ in range(3)]
-
-        # return unobscured labels
-        if len(labels) and s > 0.03:
-            box = np.array([xmin, ymin, xmax, ymax], dtype=np.float32)
-            ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
-            labels = labels[ioa < 0.60]  # remove >60% obscured labels
+            # return unobscured labels
+            if len(labels) and s > 0.03:
+                box = np.array([xmin, ymin, xmax, ymax], dtype=np.float32)
+                ioa = bbox_ioa(box, labels[:, 1:5])  # intersection over area
+                labels = labels[ioa < 0.60]  # remove >60% obscured labels
 
     return labels
 
@@ -264,7 +276,7 @@ def mixup(im, labels, im2, labels2):
     return im, labels
 
 
-def box_candidates(box1, box2, wh_thr=2, ar_thr=20, area_thr=0.1, eps=1e-16):  # box1(4,n), box2(4,n)
+def box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  # box1(4,n), box2(4,n)
     # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
     w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
     w2, h2 = box2[2] - box2[0], box2[3] - box2[1]

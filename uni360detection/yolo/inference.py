@@ -8,10 +8,14 @@ from uni360detection.yolo.utils.augmentations import letterbox
 from uni360detection.yolo.utils.general import (check_img_size,
                                                 non_max_suppression,
                                                 scale_coords, xyxy2xywh)
-from uni360detection.yolo.utils.torch_utils import time_synchronized
+from uni360detection.yolo.utils.torch_utils import time_sync
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())
+
+################################################################################
+#### YOLO v6.0
+################################################################################
 
 def yolo_xywh2xyxy(points, sx, sy, ref_h, ref_w):
 
@@ -31,7 +35,7 @@ def yolo_xywh2xyxy(points, sx, sy, ref_h, ref_w):
 def yolo_xywh2xyxy_v2(new_points, ref_points):
 
     assert len(new_points) == 4 , "length is 4, ctrx, ctry, w, h"
-    sx, sy = ref_points[0]
+    sx, sy = ref_points[0][0],ref_points[0][1]
     ref_w = ref_points[1][0] - ref_points[0][0]
     ref_h = ref_points[1][1] - ref_points[0][1]
 
@@ -46,6 +50,20 @@ def yolo_xywh2xyxy_v2(new_points, ref_points):
 
     return [(x_left, y_top), (x_right, y_bottom)]
 
+def select_best_yolobox(candidates, method):
+     # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence, 6:startline, 7:endline
+    if method == "width":
+        max_candidate = max(candidates, key=lambda x: x[3]) # max width
+    elif method == "height":
+        max_candidate = max(candidates, key=lambda x: x[4]) # max height
+    elif method == "area":
+        max_candidate = max(candidates, key=lambda x: x[4] * x[3]) # max area
+    elif method == "confidence":
+        max_candidate = max(candidates, key=lambda x: x[5]) # max confidence
+    else:
+        raise NotImplementedError(f">>> method {method} is not implemented")
+    return max_candidate
+    
 def convert_img(img0, imgsz, stride):
     # Padded resize
     img = letterbox(img0, imgsz, stride=stride)[0]
@@ -67,7 +85,7 @@ class YoloInfer:
     @torch.no_grad()
     def _initialize(self):
         self.model = attempt_load(self.model_path,
-                                  map_location=self.device)  # load FP32 model
+                                  device=self.device)  # load FP32 model
         self.stride = int(self.model.stride.max())  # model stride
         self.imgsz = check_img_size(self.imgsz,
                                     s=self.stride)  # check image size
@@ -98,7 +116,7 @@ class YoloInfer:
             img = img.unsqueeze(0)
 
         # Inference
-        t1 = time_synchronized()
+        t1 = time_sync()
         pred = self.model(img, augment=False, visualize=False)[0]
 
         # Apply NMS
@@ -108,7 +126,7 @@ class YoloInfer:
                                    classes,
                                    agnostic_nms,
                                    max_det=max_det)
-        t2 = time_synchronized()
+        t2 = time_sync()
 
         # Process detections
         output = []
