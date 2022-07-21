@@ -14,4 +14,7 @@ NEED_HIST: bool = False # need HISTORY image processing or not
 LOCAL_LOG_PATH: Union[str, Path] = Path.cwd() /  "log" / FOLDER_NAME # log directionary 
 LOCAL_OUTPUT_PATH: Union[str, Path] =  Path.cwd() /  "output" / FOLDER_NAME # output results directionary 
 
-logger = get_logger(FOLDER_NAME, LOCAL_LOG_PATH)
+LOCAL_LOG_PATH.mkdir(exist_ok=True, parents=True)
+LOCAL_OUTPUT_PATH.mkdir(exist_ok=True, parents=True)
+
+# LOGGER = get_logger(FOLDER_NAME, LOCAL_LOG_PATH)
