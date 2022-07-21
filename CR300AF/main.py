@@ -1,11 +1,6 @@
-
-
 from pathlib import Path
 import sys
 sys.path.append("..")
-
-
-import cv2 
 
 from uni360detection.base.reader import ImReader
 from uni360detection.base.splitter import Splitter
@@ -62,11 +57,11 @@ class pyStar360Robot:
         self.locator.locate_anchors_yolo(test_img, img_h, img_w)
         item_bboxes = self.locator.locate_bboxes_according2anchors(bbox_formater(self.itemInfo["items"]))
 
-
         # 检测
+        item_bboxes = self.detector.detect_items(item_bboxes, test_img, test_startline, img_w, img_h)
 
 
-        # 
+        # print 
         img = plt_bboxes_on_img(item_bboxes, test_img, img_h, img_w,
                  test_startline, axis=self.channel_params.axis, vis_lv=1)
        
