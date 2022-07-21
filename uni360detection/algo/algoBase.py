@@ -14,7 +14,7 @@ class algoDecorator:
         if self.logger:
             self.logger.info(f'>>> Function {self.function.__name__!r} executed in {(t2-t1):.4f}s')
         else:
-            print(f'>>> Function {self.function.__name__!r} executed in {(t2-t1):.4f}s')
+            print(f'>>> Function executed in {(t2-t1):.4f}s')
         return result 
 
 class algoBase:
