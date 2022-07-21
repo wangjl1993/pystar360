@@ -175,13 +175,14 @@ class BBox:
 def bbox_formater(bboxes):
     """convert to data struct"""
     # bboxes: dict
-    bboxes = sorted(bboxes, key=lambda x: x["rect"][0][0])
+    bboxes = sorted(bboxes, key=lambda x: x["temp_rect"][0][0])
     
     new_bboxes = []
     for b in bboxes:
         name, num2check = get_label_num2check(b["label"])
-        box = BBox(label=b["label"], index=b["index"], name=name, num2check=num2check)
-        box.temp_rect = b["rect"]
+        box = BBox(label=b["label"], name=name, num2check=num2check)
+        box.orig_rect = b["orig_rect"]
+        box.temp_rect = b["temp_rect"]
         new_bboxes.append(box)
     
     return new_bboxes

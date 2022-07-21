@@ -5,7 +5,7 @@ import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from uni360detection.utilities.fileManger import *
 from uni360detection.utilities.helper import *
-from uni360detection.yolo.inference import YoloInfer, yolo_xywh2xyxy
+from uni360detection.yolo.inference import YoloInfer, yolo_xywh2xyxy, select_best_yolobox
 
 
 def find_approximate_single_end(l,
@@ -52,21 +52,7 @@ def find_approximate_single_end(l,
     if not find_end:
         raise ValueError("Couldn't find end.")
     return idx
-
-
-def select_best_cutpoints(candidates, method):
-     # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence, 6:startline, 7:endline
-    if method == "width":
-        max_candidate = max(candidates, key=lambda x: x[3]) # max width
-    elif method == "height":
-        max_candidate = max(candidates, key=lambda x: x[4]) # max height
-    elif method == "area":
-        max_candidate = max(candidates, key=lambda x: x[4] * x[3]) # max area
-    elif method == "confidence":
-        max_candidate = max(candidates, key=lambda x: x[5]) # max confidence
-    else:
-        raise NotImplementedError(f">>> method {method} is not implemented")
-    return max_candidate
+    
 
 class Splitter:
     def __init__(self,
@@ -192,7 +178,7 @@ class Splitter:
         if len(outputs) < 1:
             raise ValueError("Can't find cut line for splitting carriage.")
         
-        max_output = select_best_cutpoints(outputs, self.params.method)
+        max_output = select_best_yolobox(outputs, self.params.method)
         startline = max_output[6] #6: startline
         endline = max_output[7] #7: endline 
         if self.carriage == 1 or self.carriage == self.train_dict.num: 
