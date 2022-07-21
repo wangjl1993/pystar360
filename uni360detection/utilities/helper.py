@@ -252,6 +252,30 @@ def crop_segmented_rect(img, rect):
     img = img[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]]
     return img
 
+def pixel2fp(p, sp, length):
+    return max(0, p / length + sp)
+
+# frame2rect(points, start_main_axis_fp, img_h, img_w,  start_minor_axis_fp=0, axis=1)
+def rect2frame(points, start_main_axis_px, img_h, img_w, start_minor_axis_px=0, axis=1):
+
+    if axis == 0:
+        sx = start_minor_axis_px
+        sy = start_main_axis_px
+    else:
+        sx = start_main_axis_px
+        sy = start_minor_axis_px 
+
+    x_left = pixel2fp(points[0][0], sx, img_w)
+    y_top = pixel2fp(points[0][1], sy, img_h)
+    x_right = pixel2fp(points[1][0], sx, img_w)
+    y_bottom = pixel2fp(points[1][1], sy, img_h)
+
+    return [[x_left, y_top], [x_right, y_bottom]]
+
+def xyxy_nested(curr_rect, reff_rect):
+    pt1 = [abs(curr_rect[0][0] - reff_rect[0][0]), abs(curr_rect[0][1] - reff_rect[0][1])]
+    pt2 = [abs(curr_rect[1][0] - reff_rect[0][0]), abs(curr_rect[1][1] - reff_rect[0][1])]
+    return [pt1, pt2]
 
 ################################################################################
 #### TODO later 
@@ -268,15 +292,15 @@ def pixel2y(y, sy, img_h):
     return y / img_h + sy
 
 
-def rect2frame(points, sx, img_h, img_w, sy=0):
-    """left-top right bottom rect points to frames value (float)"""
-    x_left = pixel2x(points[0][0], sx, img_w)
-    y_top = pixel2y(points[0][1], sy, img_h)
+# def rect2frame(points, sx, img_h, img_w, sy=0):
+#     """left-top right bottom rect points to frames value (float)"""
+#     x_left = pixel2x(points[0][0], sx, img_w)
+#     y_top = pixel2y(points[0][1], sy, img_h)
 
-    x_right = pixel2x(points[1][0], sx, img_w)
-    y_bottom = pixel2y(points[1][1], sy, img_h)
+#     x_right = pixel2x(points[1][0], sx, img_w)
+#     y_bottom = pixel2y(points[1][1], sy, img_h)
 
-    return [(x_left, y_top), (x_right, y_bottom)]
+#     return [(x_left, y_top), (x_right, y_bottom)]
 
 
 def get_rect_area(points):
