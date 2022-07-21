@@ -1,0 +1,27 @@
+dataset:
+  image_size: 256
+  tiling:
+    apply: false
+    tile_size: null
+    stride: null
+    remove_border_count: 0
+    use_random_tiling: False
+    random_tile_count: 16
+
+model:
+  name: pat
+  backbone: resnet18
+  layers:
+    - layer2
+    - layer3
+  num_neighbors: 9
+  weight_file: weights/model.ckpt
+  normalization_method: min_max # options: [null, min_max, cdf]
+  threshold:
+    image_default: 0
+    pixel_default: 0
+    adaptive: true
+
+metrics:
+  image:
+    - F1Score
