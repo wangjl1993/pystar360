@@ -1,27 +1,23 @@
-# 丢失类故障算法汇总
+
+################################################################################
+#### 丢失类故障算法汇总
+################################################################################
 
 import cv2 
 import copy
-from typing import Any
 
 from uni360detection.algo.algoBase import algoBase, algoDecorator
-from uni360detection.base.dataStruct import BBox
+# from uni360detection.base.dataStruct import BBox
 from uni360detection.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from uni360detection.utilities.helper import crop_segmented_rect, frame2rect
 
 
 @algoDecorator
 class DetectItemsMissing(algoBase):
-    def __call__(self, test_img, test_startline, img_h, img_w) -> Any:
+    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
         # if empty, return empty 
-        if not self.item_bboxes_list:
+        if not item_bboxes_list:
             return []
-
-        # sorting
-        if self.axis == 0:
-            self.item_bboxes_list = sorted(self.item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
-        else:
-            self.item_bboxes_list = sorted(self.item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
         
         # initialize model 
         model = YoloInfer(self.item_params["model_path"], self.device, 
@@ -30,7 +26,7 @@ class DetectItemsMissing(algoBase):
         # iterate 
         new_item_bboxes_list = []
         count = 1
-        for idx, box in enumerate(self.item_bboxes_list):
+        for _, box in enumerate(item_bboxes_list):
             # get update box info
             label_name = box.name 
             num2check = box.num2check 
@@ -49,7 +45,7 @@ class DetectItemsMissing(algoBase):
             # update box info 
             actual_num = len(outputs)
             box.conf_thres = self.item_params["conf_thres"]
-            box.description = f"真实检测数量：{actual_num}， 需要检测数量: {num2check}."
+            box.description = f">>> box: {box.name}; actual num: {actual_num}; num required: {num2check}."
 
             # if len(outpus) == 0
             if  actual_num == 0 and num2check > 0:
@@ -66,11 +62,7 @@ class DetectItemsMissing(algoBase):
                 count += 1
                 continue 
 
-            try:
-                only_check_num = self.item_params["item_check_num"]
-            except KeyError:
-                only_check_num = False
-
+            only_check_num = self.item_params.get("item_check_num", False)
             outputs = sorted(outputs, key=lambda x: x[0])
             if only_check_num:
                 # only check num，do not need to return every single detected item's location 
