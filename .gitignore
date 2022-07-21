@@ -6,9 +6,10 @@ dev_CRH1A-A.yaml
 dev_CR300AF.yaml
 dev_test_api.py
 dataset
-CRH1A-A/
+CRH1A_A/
 **.pt
 **.pth
+*.jpg
 
 # Compiled source #
 ###################
