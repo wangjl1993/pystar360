@@ -12,16 +12,16 @@ from uni360detection.utilities.helper import crop_segmented_rect, frame2rect
 
 @algoDecorator
 class DetectItemsMissing(algoBase):
-    def __call__(self, test_img=None, test_startline=None, img_h=None, img_w=None) -> Any:
+    def __call__(self, test_img, test_startline, img_h, img_w) -> Any:
         # if empty, return empty 
         if not self.item_bboxes_list:
             return []
 
         # sorting
         if self.axis == 0:
-            item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
+            self.item_bboxes_list = sorted(self.item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
         else:
-            item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
+            self.item_bboxes_list = sorted(self.item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
         
         # initialize model 
         model = YoloInfer(self.item_params["model_path"], self.device, 
