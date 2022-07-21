@@ -90,12 +90,12 @@ class YoloInfer:
         self.imgsz = check_img_size(self.imgsz,
                                     s=self.stride)  # check image size
 
-        # Run inference
-        if self.device.type != "cpu":
-            self.model(
-                torch.zeros(1, 3, self.imgsz,
-                            self.imgsz).to(self.device).type_as(
-                                next(self.model.parameters())))  # run once
+        # # Run inference
+        # if self.device.type != "cpu":
+        #     self.model(
+        #         torch.zeros(1, 3, self.imgsz,
+        #                     self.imgsz).to(self.device).type_as(
+        #                         next(self.model.parameters())))  # run once
 
     @torch.no_grad()
     def infer(
