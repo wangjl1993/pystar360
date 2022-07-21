@@ -3,8 +3,8 @@
 *__pycache__/
 *.ipynb_checkpoints
 dev_CRH1A-A.yaml
-dev_CR300AF.yaml
-dev_test_api.py
+# dev_CR300AF.yaml
+# dev_test_api.py
 dataset
 CRH1A_A/
 **.pt

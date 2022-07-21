@@ -53,6 +53,7 @@ class Detector:
                     self.logger.info(f">>> Params not provided. Skip items with label: {label_name}")
                 else:
                     print(f">>> Params not provided. Skip items with label: {label_name}")
+                new_item_bboxes.extend(item_bboxes_list)
                 continue 
 
             try:
@@ -63,6 +64,7 @@ class Detector:
                     self.logger.info(f">>> Fail to call {item_params.func}")
                 else:
                     print(f">>> Fail to call {item_params.func}")
+                new_item_bboxes.extend(item_bboxes_list)
                 continue 
             
             # init object 
@@ -79,11 +81,13 @@ class Detector:
             local_item_bboxes = func(item_bboxes_list, test_img, test_startline, img_h, img_w)
 
             new_item_bboxes.extend(local_item_bboxes)
-            if self.logger:
-                self.logger.info(f">>> Finished detection...")
-            else:
-                print(f">>> Finished detection...")
-                
+        
+        
+        if self.logger:
+            self.logger.info(f">>> Finished detection...")
+        else:
+            print(f">>> Finished detection...")
+            
         return new_item_bboxes
 
                 

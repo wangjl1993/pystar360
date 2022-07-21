@@ -1,0 +1,14 @@
+
+major_train_code: "CR300AF"
+minor_train_code: "CR300AF"
+channels: ["14","15"]
+carriages: "1,9"
+
+train:
+  - ["xxxx", "2205190006", "/media/casxm/Elements/huaxing/sanya/device1/CR300AF/2022batch1/2205190006"]
+  - ["xxxx", "2205170004", "/media/casxm/Elements/huaxing/sanya/device1/CR300AF/2022batch1/2205170004"]
+  - ["xxxx", "2205050007", "/media/casxm/Elements/huaxing/sanya/device1/CR300AF/2022batch1/2205050007"]
+  - ["xxxx", "2201270008", "/media/casxm/Elements/huaxing/sanya/device1/CR300AF/2022batch1/2201270008"]
+
+template:
+  - ["xxxx", "2201270008", "/media/casxm/Elements/huaxing/sanya/device1/CR300AF/2022batch1/2201270008"]

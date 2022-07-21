@@ -9,7 +9,7 @@ label_yolo:
     only_check_num: False # if true，整个区域检测个数，不返回具体每个检测点具体坐标
 
 # patchcore example 
-l90:
+xx:
   func: "DetectForeignObjectWholeImage"
   params:
     memory_bank_path: xx
