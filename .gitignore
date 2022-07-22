@@ -10,6 +10,9 @@ CRH1A_A/
 **.pt
 **.pth
 *.jpg
+uni360detection/spec
+dev_panto_api.py
+dev_panto.yaml
 
 # Compiled source #
 ###################
