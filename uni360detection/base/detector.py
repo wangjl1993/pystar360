@@ -1,4 +1,3 @@
-
 from uni360detection.algo.defectType1 import *
 from uni360detection.algo.defectType2 import *
 
@@ -89,5 +88,3 @@ class Detector:
             print(f">>> Finished detection...")
             
         return new_item_bboxes
-
-                

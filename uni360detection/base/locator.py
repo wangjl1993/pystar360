@@ -1,7 +1,7 @@
 
 import numpy as np
 from copy import deepcopy
-from uni360detection.utilities.fileManger import write_json
+from uni360detection.utilities.fileManger import LABELME_RECT_TEMPLATE, write_json, LABELME_TEMPLATE
 from uni360detection.base.dataStruct import bbox_formater
 from uni360detection.utilities.helper import *
 from uni360detection.yolo.inference import *
@@ -99,67 +99,6 @@ class Locator:
                 bbox.score = max_output[0]
                 bbox.conf_thres = self.local_params.conf_thres
                 self.new_anchor_bboxes.append(bbox)
-
-    def _generate_anchor_img(self, save_path, test_img, img_h, img_w, aux="anchor"):
-        save_path = Path(save_path)
-        save_path.mkdir(parents=True, exist_ok=True)
-
-        labelme_template = {
-                "version": "4.5.9",
-                "flags": {},
-                "shapes": [],
-                "imagePath": "",
-                "imageData": None,
-                "imageHeight": 0,
-                "imageWidth": 0
-            }     
-
-        rectange_template = {
-            "label": "",
-            "points": [],
-            "group_id": None,
-            "shape_type": "rectangle",
-            "flags": {}
-        }
-
-        print(">>> Start cropping...")
-        anchor_bboxes = bbox_formater(self.itemInfo["anchors"])
-        for idx, bbox in enumerate(anchor_bboxes):
-            new_template = deepcopy(labelme_template)
-            new_rectangle = deepcopy(rectange_template)
-
-            # get proposal rect in frame points
-            proposal_rect = cal_coord_by_ratio_adjustment(bbox.temp_rect, self.temp_startline, self.temp_carspan, 
-                                self.test_startline, self.test_carspan, self.axis)
-            curr_rect = cal_coord_by_ratio_adjustment(bbox.orig_rect, self.temp_startline, self.temp_carspan, 
-                                self.test_startline, self.test_carspan, self.axis)
-            
-            # proposal rect from frame points to local pixel values 
-            proposal_rect_p = frame2rect(proposal_rect, self.test_startline, 
-                            img_h, img_w, start_minor_axis_fp=0, axis=self.axis)
-            curr_rect_p = frame2rect(curr_rect, self.test_startline, 
-                            img_h, img_w, start_minor_axis_fp=0, axis=self.axis)
-
-            _, _, imageWidth, imageHeight = xyxy2left_xywh(proposal_rect_p)
-            new_rectangle["points"] = xyxy_nested(curr_rect_p, proposal_rect_p)
-            new_rectangle["label"] = bbox.label
-
-            # proposal rect image 
-            proposal_rect_img = crop_segmented_rect(test_img, proposal_rect_p)
-            
-            fname = "{}_{}_{}_{}_{}_{}_{}_{}".format(
-                aux, self.qtrain_info.minor_train_code, self.qtrain_info.train_num, 
-                self.qtrain_info.train_sn, self.qtrain_info.channel, self.qtrain_info.carriage, 
-                bbox.name, idx)
-            new_template["shapes"].append(new_rectangle)
-            new_template["imageHeight"] = int(imageHeight)
-            new_template["imageWidth"] = int(imageWidth)
-            new_template["imagePath"] = fname + ".jpg"
-            img_fname = save_path / (fname + ".jpg")
-            cv2.imwrite(str(img_fname), proposal_rect_img)
-            json_fname = save_path / (fname + ".json")
-            write_json(str(json_fname), new_template)
-            print(f">>> {fname}.")
 
 
     def _update_minor_axis_affine_transform_matrix(self, minor_axis_affine_maxtrix):
@@ -259,6 +198,50 @@ class Locator:
                     bbox.curr_rect[1] = bbox.proposal_rect[1].to_list() # copy
 
         return item_bboxes
+
+
+    def _dev_generate_bboxes_img_(self, save_path, test_img, img_h, img_w, box_type="anchors"):
+        save_path = Path(save_path)
+        save_path.mkdir(parents=True, exist_ok=True)
+
+        print(">>> Start cropping...")
+        anchor_bboxes = bbox_formater(self.itemInfo[box_type])
+        for idx, bbox in enumerate(anchor_bboxes):
+            new_template = deepcopy(LABELME_TEMPLATE)
+            new_rectangle = deepcopy(LABELME_RECT_TEMPLATE)
+
+            # get proposal rect in frame points
+            proposal_rect = cal_coord_by_ratio_adjustment(bbox.temp_rect, self.temp_startline, self.temp_carspan, 
+                                self.test_startline, self.test_carspan, self.axis)
+            curr_rect = cal_coord_by_ratio_adjustment(bbox.orig_rect, self.temp_startline, self.temp_carspan, 
+                                self.test_startline, self.test_carspan, self.axis)
+            
+            # proposal rect from frame points to local pixel values 
+            proposal_rect_p = frame2rect(proposal_rect, self.test_startline, 
+                            img_h, img_w, start_minor_axis_fp=0, axis=self.axis)
+            curr_rect_p = frame2rect(curr_rect, self.test_startline, 
+                            img_h, img_w, start_minor_axis_fp=0, axis=self.axis)
+
+            _, _, imageWidth, imageHeight = xyxy2left_xywh(proposal_rect_p)
+            new_rectangle["points"] = xyxy_nested(curr_rect_p, proposal_rect_p)
+            new_rectangle["label"] = bbox.label
+
+            # proposal rect image 
+            proposal_rect_img = crop_segmented_rect(test_img, proposal_rect_p)
+            
+            fname = "{}_{}_{}_{}_{}_{}_{}_{}".format(
+                box_type, self.qtrain_info.minor_train_code, self.qtrain_info.train_num, 
+                self.qtrain_info.train_sn, self.qtrain_info.channel, self.qtrain_info.carriage, 
+                bbox.name, idx)
+            new_template["shapes"].append(new_rectangle)
+            new_template["imageHeight"] = int(imageHeight)
+            new_template["imageWidth"] = int(imageWidth)
+            new_template["imagePath"] = fname + ".jpg"
+            img_fname = save_path / (fname + ".jpg")
+            cv2.imwrite(str(img_fname), proposal_rect_img)
+            json_fname = save_path / (fname + ".json")
+            write_json(str(json_fname), new_template)
+            print(f">>> {fname}.")
 
 
 

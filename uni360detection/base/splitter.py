@@ -13,6 +13,7 @@ def find_approximate_single_end(l,
                                 corr_thres=None,
                                 reverse=False,
                                 axis=1,
+                                skip_num=0,
                                 imread=imread_tenth):
     """
     找到车头车尾所在大致帧数, 如果没有额外信息可以从图片上调整得出，如果有额外轴信息，可以覆盖
@@ -24,11 +25,11 @@ def find_approximate_single_end(l,
 
     # backward
     if reverse:
-        sidx = length - 1
+        sidx = length - 1 - skip_num
         eidx = length - int(length // 3)
         step = -1
     else:  # forward
-        sidx = 0
+        sidx = 0 + skip_num
         eidx = int(length // 3)
         step = 1
 
@@ -75,7 +76,6 @@ class Splitter:
         
         # local params 
         self.params = local_params
-        self.var_threshold = local_params.get("var_threshold", 1)
 
         # images list 
         self.images_path_list = images_path_list
@@ -90,14 +90,22 @@ class Splitter:
         self._cutframe_idx = None
     
     def get_approximate_cutframe_idxes(self):
+        var_threshold = self.local_params.get("var_threshold", 1)
+        skip_num = self.local_params.get("skip_num", 0)
+        corr_thres = self.local_params.get("corr_thres", None)
+
         head_appro_idx = find_approximate_single_end(
             self.images_path_list,
-            var_threshold=self.var_threshold,
+            var_threshold=var_threshold,
+            corr_thres=corr_thres,
+            skip_num=skip_num,
             axis=self.axis)
         tail_appro_idx = find_approximate_single_end(
             self.images_path_list,
-            var_threshold=self.var_threshold,
+            var_threshold=var_threshold,
+            corr_thres=corr_thres,
             reverse=True,
+            skip_num=skip_num,
             axis=self.axis)
         n_frames = tail_appro_idx - head_appro_idx + 1
         default_cutpoints = np.array(self.train_dict.cutpoints)
@@ -119,14 +127,15 @@ class Splitter:
         self.cutframe_idx = cutframe_idx
 
     def get_specific_cutpoints(self,
-                               cover_range=2,
-                               shift=3,
-                               offset=0, 
                                imread=imread_quarter,
                                save_path=None):
         if self.cutframe_idx is None:
             raise ValueError("Please provide cutframe index 轴信息.")
         assert len(self.cutframe_idx) == 2
+
+        cover_range = self.params.get("cover_range", 2)
+        offset = self.params.get("offset", 0)
+        shift = self.params.get("shift", 3)
 
         # load model
         model = YoloInfer(self.params.model_path,
@@ -216,9 +225,13 @@ class Splitter:
             else:
                 raise ValueError(f"Axis {self.axis} is not available.")
 
-    def _generate_cutpoints_img(self, save_path, imread=imread_quarter, aux="", cover_range=2, shift=3, offset=0):
+    def _dev_generate_cutpoints_img_(self, save_path, imread=imread_tenth, aux=""):
         if self.cutframe_idx is None:
             raise ValueError("Please provide cutframe index 轴信息.")
+
+        cover_range = self.params.get("cover_range", 2)
+        offset = self.params.get("offset", 0)
+        shift = self.params.get("shift", 3)
 
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
@@ -237,3 +250,23 @@ class Splitter:
                 fname = save_path / f"{aux}_{self.minor_train_code}_{self.train_num}_{self.train_sn}_{self.channel}_{self.carriage}_{p}_{i}.jpg"
                 cv2.imwrite(str(fname), img)
                 print(f">>> {fname}.")
+
+    def _dev_generate_car_template_(self, save_path, cutframe_idxes=None, imread=imread_quarter):
+        # ---------- generate cut points for training 
+        if cutframe_idxes is not None:
+            self.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
+        else:
+            cutframe_idxes = self.get_approximate_cutframe_idxes()
+            # update cutframe idx
+            self.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
+                        cutframe_idxes[self.qtrain_info.carriage])
+
+        save_path = Path(save_path) / self.channel 
+        save_path.mkdir(parents=True, exist_ok=True)
+        
+        test_startline, test_endline = self.get_specific_cutpoints()
+        img = read_segmented_img(self.images_path_list, test_startline, test_endline, imread, axis=self.axis)
+        fname = save_path / f"car_{self.carriage}.jpg"
+        cv2.imwrite(str(fname), img)
+        print(f">>> {fname}.")
+        
