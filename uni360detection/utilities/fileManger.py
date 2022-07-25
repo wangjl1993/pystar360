@@ -7,6 +7,24 @@ from pathlib import Path
 from filelock import FileLock  # mutex lock
 
 
+LABELME_TEMPLATE = {
+            "version": "4.5.9",
+            "flags": {},
+            "shapes": [],
+            "imagePath": "",
+            "imageData": None,
+            "imageHeight": 0,
+            "imageWidth": 0
+        }     
+
+LABELME_RECT_TEMPLATE = {
+        "label": "",
+        "points": [],
+        "group_id": None,
+        "shape_type": "rectangle",
+        "flags": {}
+    }
+
 def sort_files_in_numeric_order(l):
     """Sort fiels in number order"""
     return sorted(l, key=lambda x: (int(re.sub("\D", "", x)), x))
