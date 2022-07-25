@@ -3,16 +3,15 @@
 ################################################################################
 
 import cv2 
-import copy
 import numpy as np
 
-from uni360detection.algo.algoBase import algoBase, algoDecorator
+from uni360detection.algo.algoBase import algoBaseABC, algoDecorator
 from uni360detection.utilities.helper import crop_segmented_rect, frame2rect
 from uni360detection.ano.inference import PatchCoreInfer
 
 
 @algoDecorator
-class DetectForeignObjectWholeImage(algoBase):
+class DetectForeignObjectWholeImage(algoBaseABC):
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
         # if empty, return empty 
         if not item_bboxes_list:
@@ -67,7 +66,7 @@ class DetectForeignObjectWholeImage(algoBase):
 
 
 @algoDecorator
-class DetectForeignObjectAfterSeg(algoBase):
+class DetectForeignObjectAfterSeg(algoBaseABC):
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
         raise NotImplementedError
 

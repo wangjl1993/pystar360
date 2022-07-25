@@ -6,14 +6,14 @@
 import cv2 
 import copy
 
-from uni360detection.algo.algoBase import algoBase, algoDecorator
+from uni360detection.algo.algoBase import algoBaseABC, algoDecorator
 # from uni360detection.base.dataStruct import BBox
 from uni360detection.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from uni360detection.utilities.helper import crop_segmented_rect, frame2rect
 
 
 @algoDecorator
-class DetectItemsMissing(algoBase):
+class DetectItemsMissing(algoBaseABC):
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
         # if empty, return empty 
         if not item_bboxes_list:

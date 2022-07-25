@@ -12,12 +12,13 @@ class algoDecorator:
         result = self.function(*args, **kwargs)
         t2 = time()
         if self.logger:
-            self.logger.info(f'>>> Function {self.function.__name__!r} executed in {(t2-t1):.4f}s')
+            # self.logger.info(f'>>> Function {self.function.__name__!r} executed in {(t2-t1):.4f}s')
+            self.logger.info(f'>>> Function executed in {(t2-t1):.4f}s')
         else:
             print(f'>>> Function executed in {(t2-t1):.4f}s')
         return result 
 
-class algoBase:
+class algoBaseABC:
     def __init__(self, **kwargs):
         for key, item in kwargs.items():
             setattr(self, key, item)  
