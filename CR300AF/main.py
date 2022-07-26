@@ -58,7 +58,6 @@ class pyStar360Robot:
         
         # 定位
         self.locator.update_test_traininfo(test_startline, test_endline)
-        # self.locator._generate_anchor_img("./CR300AF/dataset/channal1415_anchors", test_img, img_h, img_w)
         self.locator.locate_anchors_yolo(test_img, img_h, img_w)
         item_bboxes = self.locator.locate_bboxes_according2anchors(bbox_formater(self.itemInfo["items"]))
 
@@ -72,17 +71,70 @@ class pyStar360Robot:
         cv2.imwrite(str(fname), img)
 
 
+    def _dev_generate_cutpoints_(self, save_path, cutframe_idxes=None):
         # ---------- generate cut points for training 
-        # self.splitter._generate_cutpoints_img("./CR300AF/dataset/cutframe")
+        if cutframe_idxes is not None:
+            self.splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
+        else:
+            cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
+            # update cutframe idx
+            self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
+                        cutframe_idxes[self.qtrain_info.carriage])
+
+        self.splitter._dev_generate_cutpoints_img_(save_path)
+    
+    def _dev_generate_template_(self, save_path, cutframe_idxes=None):
+        if cutframe_idxes is not None:
+            self.splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
+        else:
+            cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
+            # update cutframe idx
+            self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
+                        cutframe_idxes[self.qtrain_info.carriage])
+
+        self.splitter._dev_generate_car_template_(save_path)
+
+    def _dev_generate_anchors_(self, save_path, cutframe_idxes=None):
+        if cutframe_idxes is not None:
+            self.splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
+        else:
+            cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
+            # update cutframe idx
+            self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
+                        cutframe_idxes[self.qtrain_info.carriage])
+        test_startline, test_endline = self.splitter.get_specific_cutpoints()
+
+        self.qtrain_info.test_train.startline = test_startline
+        self.qtrain_info.test_train.endline = test_endline
+        img_h = self.channel_params.img_h 
+        img_w = self.channel_params.img_w
+        test_img = read_segmented_img(self.imreader, test_startline, test_endline, 
+                imread_full, axis=self.channel_params.axis)
         
+        # 定位
+        self.locator.update_test_traininfo(test_startline, test_endline)
+        self.locator._dev_generate_anchors_img_(save_path, test_img, img_h, img_w)
 
+    # def _generate_items_for_training(self, save_path, cutframe_idxes=None, label_list=[]):
+    #     if cutframe_idxes is not None:
+    #         self.splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
+    #     else:
+    #         cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
+    #         # update cutframe idx
+    #         self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
+    #                     cutframe_idxes[self.qtrain_info.carriage])
+    #     test_startline, test_endline = self.splitter.get_specific_cutpoints()
 
-        # ---------- vis cutpoitns
-        # for i in cutpoints:
-        #     index, shift = frame2index(i, self.channel_params.img_w)
-        #     img = imread_tenth(self.imreader[index])
-        #     img_h, img_w = img.shape 
-        #     newx = int(shift * imread_tenth.resize_ratio)
-        #     img = cv2.line(img, (newx, 0), (newx, img_h), (255, 0, 0), 1) 
-        #     uid = datetime.now().strftime(DEFAULT_STR_DATETIME) 
-        #     cv2.imwrite(f"./dataset/{uid}.jpg", img)
+    #     self.qtrain_info.test_train.startline = test_startline
+    #     self.qtrain_info.test_train.endline = test_endline
+    #     img_h = self.channel_params.img_h 
+    #     img_w = self.channel_params.img_w
+    #     test_img = read_segmented_img(self.imreader, test_startline, test_endline, 
+    #             imread_full, axis=self.channel_params.axis)
+        
+    #     # 定位
+    #     self.locator.update_test_traininfo(test_startline, test_endline)
+    #     self.locator.locate_anchors_yolo(test_img, img_h, img_w)
+    #     item_bboxes = self.locator.locate_bboxes_according2anchors(bbox_formater(self.itemInfo["items"]))
+
+    #     item_bboxes = self.detector.detect_items(item_bboxes, test_img, test_startline, img_w, img_h)

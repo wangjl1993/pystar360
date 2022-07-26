@@ -9,7 +9,7 @@ from typing import Union
 
 FOLDER_NAME: str = "CR300AF"
 
-VIZ: bool = True  # visualize output  overwritten
+VIZ: bool = True  # visualize output overwritten
 VIZ_LV: int = 1  # visualize level overwritten
 NEED_HIST: bool = False # need HISTORY image processing or not overwritten
 LOCAL_LOG_PATH: Union[str, Path] = LOG_PATH / FOLDER_NAME # log directionary 

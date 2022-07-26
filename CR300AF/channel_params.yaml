@@ -4,7 +4,7 @@
   axis: 1
   splitter: 
     var_threshold: 1.5
-    offset: 2
+    offset: 0
     method: "confidence" # select method to choose best split results, area, width, height, or confidence, default: confidence
     label_translator : {0: "end", 1: "mid"}
     iou_thres: 0.45
@@ -26,7 +26,7 @@
   axis: 1
   splitter: 
     var_threshold: 1.5
-    offset: 2
+    offset: 0
     method: "confidence" # select method to choose best split results, area, width, height, or confidence, default: confidence
     label_translator : {0: "end", 1: "mid"}
     iou_thres: 0.45
