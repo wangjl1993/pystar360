@@ -184,28 +184,30 @@ class Locator:
             # for each template interval, calculate the ratio difference
             # rescale the current interval
             for _, bbox in enumerate(item_bboxes):
-                pt0 = max(bbox.orig_rect[0][main_axis], self.temp_startline)
-                pt1 = min(bbox.orig_rect[1][main_axis], self.temp_endline)
+                pt0 = max(bbox.temp_rect[0][main_axis], self.temp_startline)
+                pt1 = min(bbox.temp_rect[1][main_axis], self.temp_endline)
 
                 if first_ref <= pt0 <= second_ref:
-                    bbox.proposal_rect[0] = cal_new_pts(pt0, bbox.orig_rect[0], first_ref, ref_segl,
+                    bbox.proposal_rect[0] = cal_new_pts(pt0, bbox.temp_rect[0], first_ref, ref_segl,
                                             first_cur, cur_segl, main_axis, minor_axis_poly_func)
-                    bbox.curr_rect[0] = bbox.proposal_rect[0].to_list() # copy
+                    bbox.curr_rect[0] = cal_new_pts(pt0, bbox.orig_rect[0], first_ref, ref_segl,
+                                            first_cur, cur_segl, main_axis, minor_axis_poly_func) 
 
                 if first_ref <= pt1 <= second_ref:
-                    bbox.proposal_rect[1] = cal_new_pts(pt1, bbox.orig_rect[1], first_ref, ref_segl,
+                    bbox.proposal_rect[1] = cal_new_pts(pt1, bbox.temp_rect[1], first_ref, ref_segl,
                                             first_cur, cur_segl, main_axis, minor_axis_poly_func)
-                    bbox.curr_rect[1] = bbox.proposal_rect[1].to_list() # copy
+                    bbox.curr_rect[1] = cal_new_pts(pt0, bbox.orig_rect[1], first_ref, ref_segl,
+                                            first_cur, cur_segl, main_axis, minor_axis_poly_func) 
 
         return item_bboxes
 
 
-    def _dev_generate_bboxes_img_(self, save_path, test_img, img_h, img_w, box_type="anchors"):
+    def _dev_generate_anchors_img_(self, save_path, test_img, img_h, img_w, aux="anchors"):
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
 
         print(">>> Start cropping...")
-        anchor_bboxes = bbox_formater(self.itemInfo[box_type])
+        anchor_bboxes = bbox_formater(self.itemInfo["anchors"])
         for idx, bbox in enumerate(anchor_bboxes):
             new_template = deepcopy(LABELME_TEMPLATE)
             new_rectangle = deepcopy(LABELME_RECT_TEMPLATE)
@@ -230,7 +232,7 @@ class Locator:
             proposal_rect_img = crop_segmented_rect(test_img, proposal_rect_p)
             
             fname = "{}_{}_{}_{}_{}_{}_{}_{}".format(
-                box_type, self.qtrain_info.minor_train_code, self.qtrain_info.train_num, 
+                aux, self.qtrain_info.minor_train_code, self.qtrain_info.train_num, 
                 self.qtrain_info.train_sn, self.qtrain_info.channel, self.qtrain_info.carriage, 
                 bbox.name, idx)
             new_template["shapes"].append(new_rectangle)

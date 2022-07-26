@@ -90,9 +90,9 @@ class Splitter:
         self._cutframe_idx = None
     
     def get_approximate_cutframe_idxes(self):
-        var_threshold = self.local_params.get("var_threshold", 1)
-        skip_num = self.local_params.get("skip_num", 0)
-        corr_thres = self.local_params.get("corr_thres", None)
+        var_threshold = self.params.get("var_threshold", 1)
+        skip_num = self.params.get("skip_num", 0)
+        corr_thres = self.params.get("corr_thres", None)
 
         head_appro_idx = find_approximate_single_end(
             self.images_path_list,
@@ -127,7 +127,7 @@ class Splitter:
         self.cutframe_idx = cutframe_idx
 
     def get_specific_cutpoints(self,
-                               imread=imread_quarter,
+                               imread=imread_octa,
                                save_path=None):
         if self.cutframe_idx is None:
             raise ValueError("Please provide cutframe index 轴信息.")
@@ -225,7 +225,7 @@ class Splitter:
             else:
                 raise ValueError(f"Axis {self.axis} is not available.")
 
-    def _dev_generate_cutpoints_img_(self, save_path, imread=imread_tenth, aux=""):
+    def _dev_generate_cutpoints_img_(self, save_path, imread=imread_octa, aux=""):
         if self.cutframe_idx is None:
             raise ValueError("Please provide cutframe index 轴信息.")
 
