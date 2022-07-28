@@ -57,7 +57,7 @@ def main():
                     channel, int(carriage), CarriageInfo())
                 queryTrain.test_train.path = test_path
                 robot = pyStar360Robot(queryTrain, f"./{folder_name}/channel_params.yaml", 
-                        f"./{folder_name}/item_params.yaml", f"./{folder_name}/template/{channel}/template.json",
+                        f"./{folder_name}/item_params.yaml", f"./{folder_name}/template",
                         device=torch.device("cuda:2"))
                 robot.run()
             #     cutpoints = robot.run()
