@@ -269,4 +269,4 @@ class Splitter:
         fname = save_path / f"car_{self.carriage}.jpg"
         cv2.imwrite(str(fname), img)
         print(f">>> {fname}.")
-        
+

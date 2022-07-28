@@ -1,7 +1,7 @@
 
 import numpy as np
 from copy import deepcopy
-from uni360detection.utilities.fileManger import LABELME_RECT_TEMPLATE, write_json, LABELME_TEMPLATE
+from uni360detection.utilities.fileManger import write_json, LABELME_TEMPLATE, LABELME_RECT_TEMPLATE
 from uni360detection.base.dataStruct import bbox_formater
 from uni360detection.utilities.helper import *
 from uni360detection.yolo.inference import *
@@ -48,11 +48,15 @@ class Locator:
         # device 
         self.device = device 
 
+        # axis 
         self.axis = axis
+        # if axis == 0, vertical, main_axis = y(index=1) in [x, y], minor_axis = x(index=0)
+        # if axis == 1, horizontal, main_axis = x(index=0) in [x, y], minor_axis = y(index=1)
+        self.main_axis = 1 if self.axis == 0 else 0 
+        self.minor_axis = self.axis 
 
         # logger 
-        self.logger = logger 
-        self.new_anchor_bboxes = [] 
+        self.logger = logger
 
     def update_test_traininfo(self, test_startline, test_endline):
         self.test_startline = test_startline
@@ -60,6 +64,7 @@ class Locator:
         self.test_carspan = abs(self.test_endline - self.test_startline)
 
     def locate_anchors_yolo(self, test_img, img_h, img_w):
+        
         anchor_bboxes = bbox_formater(self.itemInfo["anchors"])
 
         # load model 
@@ -68,7 +73,7 @@ class Locator:
                 logger=self.logger)
         label_translator = self.local_params.label_translator
 
-        self.new_anchor_bboxes = [] 
+        new_anchor_bboxes = [] 
         for idx, bbox in enumerate(anchor_bboxes):
             # get proposal rect in frame points
             bbox.proposal_rect = cal_coord_by_ratio_adjustment(bbox.temp_rect, self.temp_startline, self.temp_carspan, 
@@ -88,17 +93,33 @@ class Locator:
             
             # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence,
             if len(temp_outputs) > 0:
-                # max_output = max(temp_outputs, key=lambda x: x[0])
                 max_output = select_best_yolobox(temp_outputs, self.local_params.method)
-                # [sx, sy] = bbox.proposal_rect
-                # ref_w = bbox.proposal_rect[1][0] - bbox.proposal_rect[0][0]
-                # ref_h = bbox.proposal_rect[1][1] - bbox.proposal_rect[0][1]
-                # local rect to global rect 
-                # bbox.curr_rect = yolo_xywh2xyxy(max_output[1:], sx, sy, ref_h, ref_w)
                 bbox.curr_rect = yolo_xywh2xyxy_v2(max_output[1:5], bbox.proposal_rect)
                 bbox.score = max_output[0]
                 bbox.conf_thres = self.local_params.conf_thres
-                self.new_anchor_bboxes.append(bbox)
+                new_anchor_bboxes.append(bbox)
+
+        # get template anchors and test anchors points
+        self.temp_anchor_points, self.curr_anchor_points = [], []
+        for anchor in new_anchor_bboxes:
+            self.temp_anchor_points.append(anchor.orig_rect[0]) # left top pt [x, y]
+            self.temp_anchor_points.append(anchor.orig_rect[1]) # right bottom pt [x, y]
+            self.curr_anchor_points.append(anchor.curr_rect[0]) # left top pt [x, y]
+            self.curr_anchor_points.append(anchor.curr_rect[1]) # right bottom pt [x, y]
+        
+        # sorting 
+        self.temp_anchor_points = sorted(self.temp_anchor_points, key=lambda a: a[self.main_axis])
+        self.curr_anchor_points = sorted(self.curr_anchor_points, key=lambda a: a[self.main_axis])
+        
+        # calculate minor axis shift using ax + b = y
+        if self.local_params.minor_axis_affine_maxtrix:
+            self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(self.local_params.minor_axis_affine_maxtrix)
+        elif self.local_params.auto_minor_axis_adjust:
+            variable_x = [pt[self.minor_axis] for pt in self.temp_anchor_points]
+            variable_y = [pt[self.minor_axis] for pt in self.curr_anchor_points]
+            self.minor_axis_poly_func = self._auto_update_minor_axis_affine_transform_matrix(variable_x, variable_y)
+        else:
+            raise NotImplementedError
 
 
     def _update_minor_axis_affine_transform_matrix(self, minor_axis_affine_maxtrix):
@@ -117,45 +138,20 @@ class Locator:
             x = np.array(x)
             y = np.array(y)
 
-
         z = np.polyfit(x, y, poly_order) 
         minor_axis_poly_func = np.poly1d(z)
         return minor_axis_poly_func
 
                 
-    def locate_bboxes_according2anchors(self, item_bboxes):
-        if not item_bboxes:
+    def locate_bboxes_according2anchors(self, bboxes):
+        if not bboxes:
             return []
-        anchor_bboxes = self.new_anchor_bboxes
-
-        # if axis == 0, vertical, main_axis = y(index=1) in [x, y], minor_axis = x(index=0)
-        # if axis == 1, horizontal, main_axis = x(index=0) in [x, y], minor_axis = y(index=1)
-        main_axis = 1 if self.axis == 0 else 0 
-        minor_axis = self.axis 
-
-        temp_anchor_points, curr_anchor_points = [], []
-        for anchor in anchor_bboxes:
-            temp_anchor_points.append(anchor.orig_rect[0]) # left top pt [x, y]
-            temp_anchor_points.append(anchor.orig_rect[1]) # right bottom pt [x, y]
-            curr_anchor_points.append(anchor.curr_rect[0]) # left top pt [x, y]
-            curr_anchor_points.append(anchor.curr_rect[1]) # right bottom pt [x, y]
-        temp_anchor_points = sorted(temp_anchor_points, key=lambda a: a[main_axis])
-        curr_anchor_points = sorted(curr_anchor_points, key=lambda a: a[main_axis])
-
-        # calculate minor axis shift using ax + b = y
-        if self.local_params.minor_axis_affine_maxtrix:
-            minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(self.local_params.minor_axis_affine_maxtrix)
-        elif self.local_params.auto_minor_axis_adjust:
-            minor_axis_poly_func = self._auto_update_minor_axis_affine_transform_matrix([pt[minor_axis] for pt in temp_anchor_points],
-                                                    [pt[minor_axis] for pt in curr_anchor_points])
-        else:
-            raise NotImplementedError
 
         # process main axis
         # add startline point and endline point (+ 2 - 1 = + 1)
         # number of segments 
-        temp_anchor_points = [pt[main_axis] for pt in temp_anchor_points]
-        curr_anchor_points = [pt[main_axis] for pt in curr_anchor_points]
+        temp_anchor_points = [pt[self.main_axis] for pt in self.temp_anchor_points]
+        curr_anchor_points = [pt[self.main_axis] for pt in self.curr_anchor_points]
         seg_cnt = len(temp_anchor_points) + 1
         seg_cnt2 = len(curr_anchor_points) + 1
         assert seg_cnt == seg_cnt2
@@ -183,24 +179,23 @@ class Locator:
 
             # for each template interval, calculate the ratio difference
             # rescale the current interval
-            for _, bbox in enumerate(item_bboxes):
-                pt0 = max(bbox.temp_rect[0][main_axis], self.temp_startline)
-                pt1 = min(bbox.temp_rect[1][main_axis], self.temp_endline)
+            for _, bbox in enumerate(bboxes):
+                pt0 = max(bbox.temp_rect[0][self.main_axis], self.temp_startline)
+                pt1 = min(bbox.temp_rect[1][self.main_axis], self.temp_endline)
 
                 if first_ref <= pt0 <= second_ref:
                     bbox.proposal_rect[0] = cal_new_pts(pt0, bbox.temp_rect[0], first_ref, ref_segl,
-                                            first_cur, cur_segl, main_axis, minor_axis_poly_func)
+                                            first_cur, cur_segl, self.main_axis, self.minor_axis_poly_func)
                     bbox.curr_rect[0] = cal_new_pts(pt0, bbox.orig_rect[0], first_ref, ref_segl,
-                                            first_cur, cur_segl, main_axis, minor_axis_poly_func) 
+                                            first_cur, cur_segl, self.main_axis, self.minor_axis_poly_func) 
 
                 if first_ref <= pt1 <= second_ref:
                     bbox.proposal_rect[1] = cal_new_pts(pt1, bbox.temp_rect[1], first_ref, ref_segl,
-                                            first_cur, cur_segl, main_axis, minor_axis_poly_func)
-                    bbox.curr_rect[1] = cal_new_pts(pt0, bbox.orig_rect[1], first_ref, ref_segl,
-                                            first_cur, cur_segl, main_axis, minor_axis_poly_func) 
+                                            first_cur, cur_segl, self.main_axis, self.minor_axis_poly_func)
+                    bbox.curr_rect[1] = cal_new_pts(pt1, bbox.orig_rect[1], first_ref, ref_segl,
+                                            first_cur, cur_segl, self.main_axis, self.minor_axis_poly_func) 
 
-        return item_bboxes
-
+        return bboxes
 
     def _dev_generate_anchors_img_(self, save_path, test_img, img_h, img_w, aux="anchors"):
         save_path = Path(save_path)
@@ -246,4 +241,8 @@ class Locator:
             print(f">>> {fname}.")
 
 
+def locate_dynamic_chunks():
+    pass 
 
+def locate_static_chunks():
+    pass 
