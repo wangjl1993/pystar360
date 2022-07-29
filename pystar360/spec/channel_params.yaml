@@ -1,0 +1,23 @@
+"111":
+  locator:
+    ratio_location: [0.2685, 0.7526] # front & back pantograph 
+    cover_range: 6
+    method: "height" # select the bounding box with max area, or confidence
+    target_label: "111_sdg_down"
+    label_translator : {0: "111_spx", 1: "111_dzx", 2: "111_sdg_up", 3: "111_sdg_down"}
+    iou_thres: 0.45
+    conf_thres: 0.1
+    imgsz: 640 
+    model_path: "./CRH1A_A/weights/locator111.pt"
+
+"116":
+  locator:
+    ratio_location: [0.2685, 0.7526] # front & back pantograph 
+    cover_range: 4
+    method: "area" # select the bounding box with max area, or confidence
+    target_label: "116_sdg_up"
+    label_translator : {0: "116_sdg_up"}
+    iou_thres: 0.45
+    conf_thres: 0.1
+    imgsz: 640 
+    model_path: "./CRH1A_A/weights/locator116.pt"

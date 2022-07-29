@@ -2,17 +2,17 @@ from pathlib import Path
 import sys
 sys.path.append("..")
 
-from uni360detection.base.reader import ImReader
-from uni360detection.base.splitter import Splitter
-from uni360detection.base.locator import Locator
-from uni360detection.base.detector import Detector
-from uni360detection.base.dataStruct import bbox_formater
-from uni360detection.utilities.fileManger import read_json, read_yaml
-from uni360detection.utilities.helper import concat_str, frame2index, imread_tenth, imread_quarter,read_segmented_img,imread_full
-from uni360detection.utilities.visualizer import plt_bboxes_on_img
+from pystar360.base.reader import ImReader
+from pystar360.base.splitter import Splitter
+from pystar360.base.locator import Locator
+from pystar360.base.detector import Detector
+from pystar360.base.dataStruct import bbox_formater
+from pystar360.utilities.fileManger import read_json, read_yaml
+from pystar360.utilities.helper import concat_str, frame2index, imread_tenth, imread_quarter,read_segmented_img,imread_full
+from pystar360.utilities.visualizer import plt_bboxes_on_img
 
 import CR300AF.local_settings as SETTINGS
-from uni360detection.robot import pyStar360RobotBase
+from pystar360.robot import pyStar360RobotBase
 
 class pyStar360Robot(pyStar360RobotBase):
     def __init__(self, *args, **kwargs):

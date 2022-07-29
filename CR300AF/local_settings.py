@@ -1,8 +1,8 @@
 
 import sys
 sys.path.append("..")
-from uni360detection.global_settings import * 
-from uni360detection.utilities._logger import get_logger
+from pystar360.global_settings import * 
+from pystar360.utilities._logger import get_logger
 
 from pathlib import Path
 from typing import Union

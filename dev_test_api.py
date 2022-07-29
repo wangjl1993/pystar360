@@ -7,8 +7,8 @@ from datetime import datetime
 import torch 
 import omegaconf
 
-from uni360detection.base.dataStruct import CarriageInfo, QTrainInfo
-from uni360detection.utilities.fileManger import read_yaml
+from pystar360.base.dataStruct import CarriageInfo, QTrainInfo
+from pystar360.utilities.fileManger import read_yaml
 
 DEFAULT_STR_DATETIME = "%Y-%m-%d-%H-%M-%S%f"
 
