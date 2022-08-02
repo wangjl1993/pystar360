@@ -18,7 +18,7 @@ class pyStar360Robot(pyStar360RobotBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # output save path 
-        self.output_save_path = SETTINGS.LOCAL_OUTPUT_PATH / concat_str(self.qtrain_info.major_train_code, 
+        self.output_save_path = SETTINGS.OUTPUT_PATH / concat_str(self.qtrain_info.major_train_code, 
                     self.qtrain_info.minor_train_code, self.qtrain_info.train_num, self.qtrain_info.train_sn)
         self.output_save_path.mkdir(exist_ok=True, parents=True)
 
