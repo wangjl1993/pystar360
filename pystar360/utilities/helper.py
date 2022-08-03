@@ -92,7 +92,7 @@ def get_img_size2(h, w, resize_ratio):
 
 def read_segmented_img(l, startline, endline, imread, imgsz=None, axis=1):
     """Read continuous image frame and concatenate into one image"""
-    assert startline <= endline, "startline <= endline"
+    assert startline < endline, "startline <= endline"
     if imgsz:
         img_h, img_w = imgsz
         img_h, img_w = get_img_size2(img_h, img_w, imread.resize_ratio)

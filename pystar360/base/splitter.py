@@ -7,9 +7,11 @@ from pystar360.utilities.fileManger import *
 from pystar360.utilities.helper import *
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy, select_best_yolobox
 
+EPS = 1e-6
 
 def find_approximate_single_end(l,
                                 var_threshold=1,
+                                max_var_threshold=200,
                                 corr_thres=None,
                                 reverse=False,
                                 axis=1,
@@ -38,7 +40,7 @@ def find_approximate_single_end(l,
         img = imread(l[i])
         hist = img.mean(axis=0) if axis == 1 else img.mean(axis=1)
         var1 = np.var(hist)
-        if var1 > var_threshold:
+        if max_var_threshold > var1 > var_threshold:
             if corr_thres is not None:
                 corr = ssim(img, imread(l[i + step]))
                 if corr < corr_thres:
@@ -93,16 +95,19 @@ class Splitter:
         var_threshold = self.params.get("var_threshold", 1)
         skip_num = self.params.get("skip_num", 0)
         corr_thres = self.params.get("corr_thres", None)
+        max_var_threshold = self.params.get("max_var_threshold", 200)
 
         head_appro_idx = find_approximate_single_end(
             self.images_path_list,
             var_threshold=var_threshold,
+            max_var_threshold=max_var_threshold,
             corr_thres=corr_thres,
             skip_num=skip_num,
             axis=self.axis)
         tail_appro_idx = find_approximate_single_end(
             self.images_path_list,
             var_threshold=var_threshold,
+            max_var_threshold=max_var_threshold,
             corr_thres=corr_thres,
             reverse=True,
             skip_num=skip_num,
@@ -153,20 +158,23 @@ class Splitter:
                 cutframe_idx -= offset 
             else:
                 cutframe_idx += offset 
-
+            
+            temp_outputs =[]
             for i in range(shift):
                 index = cutframe_idx + i - (shift // 2)
-                startline = int(max(0, index - cover_range))
-                endline = int(
-                    min(len(self.images_path_list), index + cover_range + 1))
-                img = read_segmented_img(self.images_path_list, startline,
-                                         endline, imread, axis=self.axis)
-                if save_path:
-                    fname = save_path / f"{self.train_sn}_{self.minor_train_code}_{self.channel}_{self.car}_{p}_{i}.jpg"
-                    cv2.imwrite(str(fname), img)
-                img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-                
-                temp_outputs = model.infer(img, conf_thres=self.params.conf_thres, iou_thres=self.params.iou_thres)
+                startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
+                endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
+
+                if startline < endline:
+                    img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
+                    
+                    if save_path:
+                        fname = save_path / f"{self.train_sn}_{self.minor_train_code}_{self.channel}_{self.car}_{p}_{i}.jpg"
+                        cv2.imwrite(str(fname), img)
+
+                    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+                    temp_outputs = model.infer(img, conf_thres=self.params.conf_thres, iou_thres=self.params.iou_thres)
+
                 for out in temp_outputs:
                      # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence, 6:startline, 7:endline
                     out = list(out)
@@ -242,14 +250,14 @@ class Splitter:
                 cutframe_idx += offset 
             for i in range(shift):
                 index = cutframe_idx + i - (shift // 2)
-                startline = int(max(0, index - cover_range))
-                endline = int(
-                    min(len(self.images_path_list), index + cover_range + 1))
-                img = read_segmented_img(self.images_path_list, startline,
-                                         endline, imread, axis=self.axis)
-                fname = save_path / f"{aux}_{self.minor_train_code}_{self.train_num}_{self.train_sn}_{self.channel}_{self.carriage}_{p}_{i}.jpg"
-                cv2.imwrite(str(fname), img)
-                print(f">>> {fname}.")
+                startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
+                endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
+                print(index, startline, endline)
+                if startline < endline:
+                    img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
+                    fname = save_path / f"{aux}_{self.minor_train_code}_{self.train_num}_{self.train_sn}_{self.channel}_{self.carriage}_{p}_{i}.jpg"
+                    cv2.imwrite(str(fname), img)
+                    print(f">>> {fname}.")
 
     def _dev_generate_car_template_(self, save_path, cutframe_idxes=None, imread=imread_quarter):
         # ---------- generate cut points for training 
