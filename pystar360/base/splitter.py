@@ -245,7 +245,12 @@ class Splitter:
 
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
-        for p, cutframe_idx in enumerate(self.cutframe_idx):
+
+        if self.qtrain_info.carriage == 1:
+            cutframe_idxes = self.cutframe_idx
+        else:
+            cutframe_idxes = [self.cutframe_idx[-1]]
+        for p, cutframe_idx in enumerate(cutframe_idxes):
             if p == 0:
                 cutframe_idx -= offset 
             else:
@@ -255,7 +260,6 @@ class Splitter:
                 index = cutframe_idx - ((shift // 2) * step) + (i * step)
                 startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
                 endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
-                print(index, startline, endline)
                 if startline < endline:
                     img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
                     fname = save_path / f"{aux}_{self.minor_train_code}_{self.train_num}_{self.train_sn}_{self.channel}_{self.carriage}_{p}_{i}.jpg"
