@@ -6,7 +6,7 @@ from pystar360.base.reader import ImReader
 from pystar360.base.splitter import Splitter
 from pystar360.base.locator import Locator
 from pystar360.base.detector import Detector
-from pystar360.base.dataStruct import bbox_formater
+from pystar360.base.dataStruct import json2bbox_formater
 from pystar360.utilities.fileManger import read_json, read_yaml
 from pystar360.utilities.helper import concat_str, frame2index, imread_tenth, imread_quarter,read_segmented_img,imread_full
 from pystar360.utilities.visualizer import plt_bboxes_on_img
@@ -35,13 +35,13 @@ class pyStar360Robot(pyStar360RobotBase):
     def run(self):
         
         # 如果没有提供有效的轴信息，图片自行寻找
-        # 车厢分割
+        # 车厢分割 split
         cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
         self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
                     cutframe_idxes[self.qtrain_info.carriage])
         test_startline, test_endline = self.splitter.get_specific_cutpoints()
 
-        # 读图 full
+        # 读图 read full
         self.qtrain_info.test_train.startline = test_startline
         self.qtrain_info.test_train.endline = test_endline
         img_h = self.channel_params.img_h 
@@ -49,12 +49,17 @@ class pyStar360Robot(pyStar360RobotBase):
         test_img = read_segmented_img(self.imreader, test_startline, test_endline, 
                 imread_full, axis=self.channel_params.axis)
         
-        # 定位
+        # 定位 location
         self.locator.update_test_traininfo(test_startline, test_endline)
-        self.locator.locate_anchors_yolo(test_img, img_h, img_w)
-        item_bboxes = self.locator.locate_bboxes_according2anchors(bbox_formater(self.itemInfo["items"]))
+        anchor_bboxes = json2bbox_formater(self.itemInfo.get("anchors", []))
+        anchor_bboxes = self.locator.locate_anchors_yolo(anchor_bboxes, test_img, img_h, img_w)
+        self.locator.get_affine_transformation(anchor_bboxes) # template VS test anchors relationship 
 
-        # 检测
+        # locate item 
+        item_bboxes = json2bbox_formater(self.itemInfo.get("items", []))
+        item_bboxes = self.locator.locate_bboxes_according2anchors(item_bboxes)
+
+        # 检测 detection
         item_bboxes = self.detector.detect_items(item_bboxes, test_img, test_startline, img_w, img_h)
 
         # print 
@@ -63,3 +68,5 @@ class pyStar360Robot(pyStar360RobotBase):
                  test_startline, axis=self.channel_params.axis, vis_lv=1)
         fname = self.output_save_path/ (concat_str(self.qtrain_info.channel, self.qtrain_info.carriage) + ".jpg")
         cv2.imwrite(str(fname), img)
+
+        

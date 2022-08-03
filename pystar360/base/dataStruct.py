@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses_json import dataclass_json
 from typing import List, Optional, Tuple, Union
 from pystar360.utilities.helper import get_label_num2check
 
+
+@dataclass_json
 @dataclass
 class Point(List):
     x: Union[int, float] = 0.
@@ -30,6 +33,7 @@ class Point(List):
             if is_dataclass(getattr(self, field.name)) else getattr(self, field.name) \
                 for field in fields(self))
 
+@dataclass_json
 @dataclass 
 class Rect(List):
     _pt1: Union[List, Tuple, Point] = field(default_factory=Point)
@@ -98,6 +102,7 @@ class Rect(List):
             if is_dataclass(getattr(self, field.name)) else getattr(self, field.name) \
                 for field in fields(self))
 
+@dataclass_json
 @dataclass
 class BBox:
     label: str = "" # xxx#2 比如xxls=3 就是name=‘xxls’，num2check=3，至少需要检查3个xxls；或xxls 就是name=‘xxls’，num2check（default=1，默认至少检测1个
@@ -111,7 +116,7 @@ class BBox:
     _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect) # if needed, 预留历史图的框，一般不需要，optional
     conf_score: float = 0. # confidence level 无论什么方法，计算出来的置信度
     conf_thres: float = 0. # confidence threshold 置信度的评判阈值是多少
-    is_defect: int = 0. # if it is defect, 0 is ok, 1 is ng 是否故障
+    is_defect: int = 0 # if it is defect, 0 is ok, 1 is ng 是否故障
     # optional 
     value: Union[float, List] = 0. # for a measurement method 如果使用度量方法，测试的数值是多少
     value_thres: float = 0. # 度量的阈值是多少
@@ -119,7 +124,7 @@ class BBox:
     defect_type: int = 0 # defect type if needed # 故障类型是什么，预留
     description: str = "" # defect description # 故障说明，可以写或者不写 预留
     is_3ddefect: int = 0
-    value_3d: float = 0
+    value_3d: float = 0.
     value_3dthres: Union[float, List] = 0. 
 
     def __post_init__(self):
@@ -172,8 +177,11 @@ class BBox:
                 assert len(value) == 2
                 setattr(self, f.name, Rect(*value))
 
-def bbox_formater(bboxes):
+def json2bbox_formater(bboxes):
     """convert to data struct"""
+    if not bboxes:
+        return []
+        
     # bboxes: dict
     bboxes = sorted(bboxes, key=lambda x: x["temp_rect"][0][0])
     
@@ -187,6 +195,7 @@ def bbox_formater(bboxes):
     
     return new_bboxes
 
+@dataclass_json
 @dataclass
 class CarriageInfo:
     path: str = ""
@@ -194,7 +203,8 @@ class CarriageInfo:
     endline: float = 0.
     first_axis_idx: int = 0
     second_axis_idx: int = 0
-
+    
+@dataclass_json
 @dataclass
 class QTrainInfo:
     major_train_code: str = "" # CRH1A

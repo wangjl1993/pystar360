@@ -1,3 +1,4 @@
+from pystar360.algo.algoBase import NullDetection
 from pystar360.algo.defectType1 import *
 from pystar360.algo.defectType2 import *
 
@@ -29,6 +30,8 @@ class Detector:
         self.logger = logger 
 
     def detect_items(self, item_bboxes, test_img, test_startline, img_w, img_h):
+        if not item_bboxes:
+            return [] 
         item_bboxes_dict = bboxes_collector(item_bboxes)
 
         if self.logger:
@@ -88,3 +91,26 @@ class Detector:
             print(f">>> Finished detection...")
             
         return new_item_bboxes
+
+
+    def _dev_item_null_detection_(self, item_bboxes):
+        if not item_bboxes:
+            return [] 
+
+        item_bboxes_dict = bboxes_collector(item_bboxes)
+
+        new_item_bboxes = []
+        for _, item_bboxes_list in item_bboxes_dict.items():
+            
+            func = NullDetection()
+            # sorting
+            if self.axis == 0:
+                item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
+            else:
+                item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
+            
+            # run func
+            local_item_bboxes = func(item_bboxes_list)
+            new_item_bboxes.extend(local_item_bboxes)
+
+        return new_item_bboxes 

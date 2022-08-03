@@ -19,6 +19,7 @@ dev*.yaml
 !dev_CR300AF.yaml
 dev*.py
 !dev_test_api.py
+output/
 
 # Compiled source #
 ###################

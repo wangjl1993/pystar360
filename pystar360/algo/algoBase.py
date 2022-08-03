@@ -33,3 +33,20 @@ class algoBaseABC:
 #         print(f'>>> Function {func.__name__!r} executed in {(t2-t1):.4f}s')
 #         return result
 #     return wrap_func
+
+
+@algoDecorator
+class NullDetection(algoBaseABC):
+    def __call__(self, item_bboxes_list):
+        # if empty, return empty 
+        if not item_bboxes_list:
+            return []
+
+        new_item_bboxes_list = []
+        count = 1
+        for _, box in enumerate(item_bboxes_list):
+            box.index =  count 
+            new_item_bboxes_list.append(box)
+            count += 1 
+
+        return new_item_bboxes_list
