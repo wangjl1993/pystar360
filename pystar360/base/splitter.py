@@ -141,6 +141,7 @@ class Splitter:
         cover_range = self.params.get("cover_range", 2)
         offset = self.params.get("offset", 0)
         shift = self.params.get("shift", 3)
+        step = self.params.get("step", 1)
 
         # load model
         model = YoloInfer(self.params.model_path,
@@ -161,7 +162,7 @@ class Splitter:
             
             temp_outputs =[]
             for i in range(shift):
-                index = cutframe_idx + i - (shift // 2)
+                index = cutframe_idx - ((shift // 2) * step) + (i * step)
                 startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
                 endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
 
@@ -240,6 +241,7 @@ class Splitter:
         cover_range = self.params.get("cover_range", 2)
         offset = self.params.get("offset", 0)
         shift = self.params.get("shift", 3)
+        step = self.params.get("step", 1)
 
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
@@ -249,7 +251,8 @@ class Splitter:
             else:
                 cutframe_idx += offset 
             for i in range(shift):
-                index = cutframe_idx + i - (shift // 2)
+                # index = cutframe_idx + i - (shift // 2)
+                index = cutframe_idx - ((shift // 2) * step) + (i * step)
                 startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
                 endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
                 print(index, startline, endline)
