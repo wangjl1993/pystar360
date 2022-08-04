@@ -3,23 +3,23 @@
 *__pycache__/
 *.ipynb_checkpoints
 dev_CRH1A-A.yaml
-# dev_CR300AF.yaml
-# dev_test_api.py
+dev_CR300AF.yaml
 dataset
 CRH1A_A/
-SP1900/
+# SP1900/
 **.pt
 **.pth
 *.jpg
 uni360detection/spec
 dev_panto_api.py
 dev_panto.yaml
-# dev_SP1900.yaml
+
 dev*.yaml
-!dev_CR300AF.yaml
 dev*.py
+!dev_SP1900.yaml
 !dev_test_api.py
 output/
+*/template/**.jpg
 
 # Compiled source #
 ###################

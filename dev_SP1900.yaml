@@ -1,0 +1,13 @@
+
+
+major_train_code: "SP"
+minor_train_code: "SP1900"
+channels: ["120"]
+carriages: "1,9"
+
+trian:
+  - ["xxxx", "xxxx0029", "/media/datum/chenneng/HongKong/dataset/0029"]
+  - ["xxxx", "xxxx0027", "/media/datum/chenneng/HongKong/dataset/0027"]
+
+template:
+  - ["xxxx", "xxxx0027", "/media/datum/chenneng/HongKong/dataset/0027"]

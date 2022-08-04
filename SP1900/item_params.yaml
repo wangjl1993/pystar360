@@ -1,0 +1,21 @@
+# yolo example 
+label_yolo:
+  func: "DetectItemsMissing"
+  params:
+    model_path: xx
+    imgsz: 640
+    conf_thres: 0.45
+    iou_thres: 0.45
+    only_check_num: False # if true，整个区域检测个数，不返回具体每个检测点具体坐标
+
+# patchcore example 
+xx:
+  func: "DetectForeignObjectWholeImage"
+  params:
+    memory_bank_path: xx
+    backbone_model_path: xx
+    config_path: xx
+    image_size: 256
+    conf_thres: 0.5
+    flip_lr: False # 是否左右翻转
+    flip_ud: False # 是否上下翻转
