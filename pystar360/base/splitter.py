@@ -11,7 +11,7 @@ EPS = 1e-6
 
 def find_approximate_single_end(l,
                                 var_threshold=1,
-                                max_var_threshold=200,
+                                max_var_threshold=5000,
                                 corr_thres=None,
                                 reverse=False,
                                 axis=1,
@@ -95,7 +95,7 @@ class Splitter:
         var_threshold = self.params.get("var_threshold", 1)
         skip_num = self.params.get("skip_num", 0)
         corr_thres = self.params.get("corr_thres", None)
-        max_var_threshold = self.params.get("max_var_threshold", 200)
+        max_var_threshold = self.params.get("max_var_threshold", 5000)
 
         head_appro_idx = find_approximate_single_end(
             self.images_path_list,
