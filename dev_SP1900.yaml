@@ -36,7 +36,7 @@ template:
 # from pathlib import Path
 # p = Path("")
 #  for i in p.iterdir():
-#     ...:     if i.is_dir():
-#     ...:         sn = i.stem.split("_")[-1]
-#     ...:         name = i.stem.split("_")[0].split("-")[-1]
-#     ...:         print(f"- ['{name}','{sn}','{str(i)}']")
+#     if i.is_dir():
+#       sn = i.stem.split("_")[-1]
+#       name = i.stem.split("_")[0].split("-")[-1]
+#       print(f"- ['{name}','{sn}','{str(i)}']")
