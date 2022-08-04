@@ -6,10 +6,7 @@ dev_CRH1A-A.yaml
 dev_CR300AF.yaml
 dataset
 CRH1A_A/
-<<<<<<< HEAD
 CR300AF/
-=======
->>>>>>> 58816a6e0b901d586afd1ed87ba6bf7ad5a90467
 # SP1900/
 **.pt
 **.pth
