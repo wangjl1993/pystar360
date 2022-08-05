@@ -7,7 +7,7 @@ from pystar360.utilities._logger import get_logger
 from pathlib import Path
 from typing import Union
 
-FOLDER_NAME: str = "SP1900"
+FOLDER_NAME: str = Path(__file__).parent.name
 
 VIZ: bool = True  # visualize output overwritten
 VIZ_LV: int = 1  # visualize level overwritten

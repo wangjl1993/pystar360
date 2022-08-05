@@ -19,34 +19,27 @@ from pystar360.robot import pyStar360RobotBase
 class pyStar360Robot(pyStar360RobotBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+       
+        self.imreader = ImReader(self.qtrain_info.test_train.path, self.qtrain_info.channel, verbose=True, logger=self.logger)
+        self.splitter = Splitter(self.qtrain_info, self.channel_params.splitter, self.imreader, 
+                        SETTINGS.TRAIN_LIB_PATH, self.device, axis=self.channel_params.axis, logger=self.logger)
+        self.locator = Locator(self.qtrain_info, self.channel_params.locator, self.device, axis=self.channel_params.axis, logger=self.logger)
+        self.detector = Detector(self.qtrain_info, self.item_params, self.device, axis=self.channel_params.axis, logger=self.logger)
+
+    def run(self):
         # output save path 
         self.output_save_path = SETTINGS.OUTPUT_PATH / concat_str(self.qtrain_info.major_train_code, 
                     self.qtrain_info.minor_train_code, self.qtrain_info.train_num, self.qtrain_info.train_sn)
         self.output_save_path.mkdir(exist_ok=True, parents=True)
-
-        # template_path = self.template_path / "template.json"
-        # self.itemInfo = read_json(str(template_path))["carriages"][str(self.qtrain_info.carriage)]
-        self.imreader = ImReader(self.qtrain_info.test_train.path, self.qtrain_info.channel, verbose=True, logger=self.logger)
-        self.splitter = Splitter(self.qtrain_info, self.channel_params.splitter, self.imreader, 
-                        SETTINGS.TRAIN_LIB_PATH, self.device, axis=self.channel_params.axis, logger=self.logger)
-        # self.locator = Locator(self.qtrain_info, self.channel_params.locator, self.itemInfo, 
-        #                         self.device, axis=self.channel_params.axis, logger=self.logger)
-        # self.detector = Detector(self.qtrain_info, self.item_params, self.itemInfo, self.device,
-        #                         axis=self.channel_params.axis, logger=self.logger)
-
-    def run(self):
-        # save_path = SETTINGS.LOCAL_OUTPUT_PATH / concat_str(self.qtrain_info.major_train_code, 
-        #             self.qtrain_info.minor_train_code, self.qtrain_info.train_num, self.qtrain_info.train_sn)
-        # save_path.mkdir(exist_ok=True, parents=True)
-
-        # # 如果没有提供有效的轴信息，图片自行寻找
-        # # 车厢分割
+        
+        # # # 如果没有提供有效的轴信息，图片自行寻找
+        # # # 车厢分割
         # cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
         # self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
         #             cutframe_idxes[self.qtrain_info.carriage])
         # test_startline, test_endline = self.splitter.get_specific_cutpoints()
 
-        # # 读图 full
+        # # 读图 read full
         # self.qtrain_info.test_train.startline = test_startline
         # self.qtrain_info.test_train.endline = test_endline
         # img_h = self.channel_params.img_h 
@@ -54,21 +47,41 @@ class pyStar360Robot(pyStar360RobotBase):
         # test_img = read_segmented_img(self.imreader, test_startline, test_endline, 
         #         imread_full, axis=self.channel_params.axis)
         
-        # # 定位
-        # self.locator.update_test_traininfo(test_startline, test_endline)
-        # self.locator.locate_anchors_yolo(test_img, img_h, img_w)
-        # item_bboxes = self.locator.locate_bboxes_according2anchors(bbox_formater(self.itemInfo["items"]))
+        # #读取模版信息
+        # template_path = self.template_path / "template.json"
+        # itemInfo = read_json(str(template_path))["carriages"][str(self.qtrain_info.carriage)]
 
-        # # 检测
+        # self.locator.update_test_traininfo(test_startline, test_endline)
+        # self.locator.update_temp_traininfo(itemInfo["startline"], itemInfo["endline"])
+        # anchor_bboxes = json2bbox_formater(itemInfo.get("anchors", []))
+
+        # anchor_bboxes = self.locator.locate_anchors_yolo(anchor_bboxes, test_img, img_h, img_w)
+        # self.locator.get_affine_transformation(anchor_bboxes) # template VS test anchors relationship 
+
+        # item_bboxes = json2bbox_formater(itemInfo.get("items", []))
+        # item_bboxes = self.locator.locate_bboxes_according2anchors(item_bboxes)
+        # chunk_bboxes = json2bbox_formater(itemInfo.get("chunks", []))
+        # chunk_bboxes = self.locator.locate_bboxes_according2anchors(chunk_bboxes)
+        # template_path = self.template_path / "template.json"
+        # itemInfo = read_json(str(template_path))["carriages"][str(self.qtrain_info.carriage)]
+
+        # # 检测 detection
         # item_bboxes = self.detector.detect_items(item_bboxes, test_img, test_startline, img_w, img_h)
 
         # # print 
+        # import cv2 
         # img = plt_bboxes_on_img(item_bboxes, test_img, img_h, img_w,
         #          test_startline, axis=self.channel_params.axis, vis_lv=1)
-        # fname = save_path/ (concat_str(self.qtrain_info.channel, self.qtrain_info.carriage) + ".jpg")
+        # # img = plt_bboxes_on_img(anchor_bboxes, test_img, img_h, img_w,
+        # #          test_startline, axis=self.channel_params.axis, vis_lv=1)
+        # fname = self.output_save_path/ (concat_str(self.qtrain_info.channel, self.qtrain_info.carriage) + ".jpg")
         # cv2.imwrite(str(fname), img)
-        # save_path = f"./{SETTINGS.FOLDER_NAME}/template"
+
+        # save_path = Path(SETTINGS.FOLDER_NAME) / "template"
         # self._dev_generate_template_(save_path)
 
-        save_path = SETTINGS.DATASET_PATH / "120cutpoints"
-        self._dev_generate_cutpoints_(save_path)
+        # save_path = SETTINGS.DATASET_PATH / "new1415cutpoints"
+        # self._dev_generate_cutpoints_(save_path)
+
+        # save_path = SETTINGS.DATASET_PATH / "1213anchors"
+        # self._dev_generate_anchors_(save_path)

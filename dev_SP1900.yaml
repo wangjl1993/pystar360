@@ -1,36 +1,37 @@
 
 major_train_code: "SP"
 minor_train_code: "SP1900"
-channels: ["120"]
-carriages: "1,9"
+channels: ["12"]
+carriages: "1,2"
 
-trian:
-  - ['T29','202207240037','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T29_202207240037']
-  - ['T37','202207240047','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T37_202207240047']
-  - ['T18','202207270012','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T18_202207270012']
-  - ['T37','202207240048','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T37_202207240048']
-  - ['T12','202207270025','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T12_202207270025']
-  - ['T4','202207270005','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T4_202207270005']
-  - ['T38','202207250028','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T38_202207250028']
-  - ['T28','202207270002','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T28_202207270002']
-  - ['T17','202207240044','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T17_202207240044']
-  - ['T1','202207240040','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T1_202207240040']
-  - ['T13','202207240043','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T13_202207240043']
-  - ['T32','202207270010','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T32_202207270010']
-  - ['T6','202207260020','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T6_202207260020']
+train:
+  # - ['T29','202207240037','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T29_202207240037']
+  # - ['T37','202207240047','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T37_202207240047']
+  # - ['T18','202207270012','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T18_202207270012']
+  # - ['T37','202207240048','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T37_202207240048']
+  # - ['T12','202207270025','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T12_202207270025']
+  # - ['T4','202207270005','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T4_202207270005']
+  # - ['T38','202207250028','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T38_202207250028']
+  # - ['T28','202207270002','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T28_202207270002']
+  # - ['T17','202207240044','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T17_202207240044']
+  # - ['T1','202207240040','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T1_202207240040']
+  # - ['T13','202207240043','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T13_202207240043']
+  # - ['T32','202207270010','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T32_202207270010']
+  # - ['T6','202207260020','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T6_202207260020']
   - ['T26','202207240045','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T26_202207240045']
-  - ['Txx','2022xxxx0029','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-Txx_2022xxxx0029']
   - ['T11','202207270018','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T11_202207270018']
   - ['T1','202207240039','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T1_202207240039']
   - ['T17','202207250021','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T17_202207250021']
 
 bad_data:
+  - ['Txx','2022xxxx0029','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-Txx_2022xxxx0029']
   - ['T39','202207240049','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T39_202207240049']
   - ['T11','202207260033','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T11_202207260033']
   - ['T29','202207240038','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T29_202207240038']
+  - ['Txx','2022xxxx0027','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-Txx_2022xxxx0027']
 
 template:
-  - ['Txx','2022xxxx0027','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-Txx_2022xxxx0027']
+  - ['T1','202207240039','/media/datum/pystar_datum/huaxing/hongkong/device1/SP/SP-T1_202207240039']
 
 
 # from pathlib import Path
