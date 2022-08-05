@@ -31,20 +31,14 @@ def cal_new_pts(pt, temp_pts, first_ref, ref_segl, first_cur, cur_segl, main_axi
     return proposal_pts
 
 class Locator:
-    def __init__(self,  qtrain_info, local_params, itemInfo, device, axis=1, logger=None):
+    def __init__(self,  qtrain_info, local_params, device, axis=1, logger=None):
         
         # query information 
         self.qtrain_info = qtrain_info
 
         # local params 
         self.local_params = local_params
-        
-        # template information 
-        self.itemInfo = itemInfo 
-        self.temp_startline = self.itemInfo["startline"]
-        self.temp_endline = self.itemInfo["endline"]
-        self.temp_carspan = self.temp_endline - self.temp_startline
-
+    
         # device 
         self.device = device 
 
@@ -62,6 +56,12 @@ class Locator:
         self.test_startline = test_startline
         self.test_endline = test_endline  
         self.test_carspan = abs(self.test_endline - self.test_startline)
+
+    def update_temp_traininfo(self, temp_startline, temp_endline):
+         # template information 
+        self.temp_startline = temp_startline
+        self.temp_endline = temp_endline
+        self.temp_carspan = self.temp_endline - self.temp_startline
 
     def locate_anchors_yolo(self, anchor_bboxes, test_img, img_h, img_w, **kwargs):
         # kwargs can be overwritten, so that you can include more anchors model 
@@ -139,7 +139,7 @@ class Locator:
         return minor_axis_poly_func
 
     
-    def _auto_update_minor_axis_affine_transform_matrix(self, x, y, poly_order=2):
+    def _auto_update_minor_axis_affine_transform_matrix(self, x, y, poly_order=1):
         if not isinstance(x, list) or not isinstance(y, list):
             x = np.array(x)
             y = np.array(y)
@@ -203,12 +203,12 @@ class Locator:
 
         return bboxes
 
-    def _dev_generate_anchors_img_(self, save_path, test_img, img_h, img_w, aux="anchors"):
+    def _dev_generate_anchors_img_(self, anchor_bboxes, save_path, test_img, img_h, img_w, aux="anchors"):
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
 
         print(">>> Start cropping...")
-        anchor_bboxes = json2bbox_formater(self.itemInfo["anchors"])
+        # anchor_bboxes = json2bbox_formater(self.itemInfo["anchors"])
         for idx, bbox in enumerate(anchor_bboxes):
             new_template = deepcopy(LABELME_TEMPLATE)
             new_rectangle = deepcopy(LABELME_RECT_TEMPLATE)

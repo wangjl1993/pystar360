@@ -16,7 +16,7 @@ def bboxes_collector(bboxes):
 
 
 class Detector:
-    def __init__(self, qtrain_info, item_params, itemInfo, device, axis=1, logger=None):
+    def __init__(self, qtrain_info, item_params, device, axis=1, logger=None):
         # query train informaiton 
         self.qtrain_info = qtrain_info
 
@@ -24,7 +24,6 @@ class Detector:
         self.item_params = item_params 
 
         # itemInfo 
-        self.itemInfo = itemInfo
         self.device = device
         self.axis = axis 
         self.logger = logger 

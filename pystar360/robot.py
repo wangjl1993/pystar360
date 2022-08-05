@@ -1,6 +1,6 @@
 
 from pathlib import Path
-from pystar360.utilities.fileManger import  read_yaml, write_json
+from pystar360.utilities.fileManger import  read_yaml, write_json, read_json
 from pystar360.utilities.helper import concat_str, read_segmented_img, imread_full
 from pystar360.base.dataStruct import json2bbox_formater
 
@@ -76,8 +76,13 @@ class pyStar360RobotBase:
                 imread_full, axis=self.channel_params.axis)
         
         # 定位
+        template_path = self.template_path / "template.json"
+        itemInfo = read_json(str(template_path))["carriages"][str(self.qtrain_info.carriage)]
+
         self.locator.update_test_traininfo(test_startline, test_endline)
-        self.locator._dev_generate_anchors_img_(save_path, test_img, img_h, img_w)
+        self.locator.update_temp_traininfo(itemInfo["startline"], itemInfo["endline"])
+        anchor_bboxes = json2bbox_formater(itemInfo.get("anchors", []))
+        self.locator._dev_generate_anchors_img_(anchor_bboxes, save_path, test_img, img_h, img_w)
     
     def _dev_generate_items_template_(self, save_path, cutframe_idxes=None):
         if cutframe_idxes is not None:
@@ -97,14 +102,20 @@ class pyStar360RobotBase:
                 imread_full, axis=self.channel_params.axis)
         
         # locate
+
+        template_path = self.template_path / "template.json"
+        itemInfo = read_json(str(template_path))["carriages"][str(self.qtrain_info.carriage)]
+
         self.locator.update_test_traininfo(test_startline, test_endline)
-        anchor_bboxes = json2bbox_formater(self.itemInfo.get("anchors", []))
+        self.locator.update_temp_traininfo(itemInfo["startline"], itemInfo["endline"])
+        anchor_bboxes = json2bbox_formater(itemInfo.get("anchors", []))
+
         anchor_bboxes = self.locator.locate_anchors_yolo(anchor_bboxes, test_img, img_h, img_w)
         self.locator.get_affine_transformation(anchor_bboxes) # template VS test anchors relationship 
 
-        item_bboxes = json2bbox_formater(self.itemInfo.get("items", []))
+        item_bboxes = json2bbox_formater(itemInfo.get("items", []))
         item_bboxes = self.locator.locate_bboxes_according2anchors(item_bboxes)
-        chunk_bboxes = json2bbox_formater(self.itemInfo.get("chunks", []))
+        chunk_bboxes = json2bbox_formater(itemInfo.get("chunks", []))
         chunk_bboxes = self.locator.locate_bboxes_according2anchors(chunk_bboxes)
 
         item_bboxes = self.detector._dev_item_null_detection_(item_bboxes)
