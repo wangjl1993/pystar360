@@ -2,6 +2,7 @@
   img_w: 2000
   img_h: 2048
   axis: 1
+  symmetry_channel: "13"
   splitter: 
     var_threshold: 1
     skip_num: 0
@@ -19,15 +20,16 @@
     minor_axis_affine_maxtrix: null # ax + b = y, then [a, b]
     auto_minor_axis_adjust: True
     method: "confidence"
-    label_translator : {0: "0", 1: "1",}
+    label_translator : {0: "0", 1: "1",2: "2"}
     iou_thres: 0.45
-    conf_thres: 0.65
+    conf_thres: 0.45
     imgsz: 640 
-    model_path: "/home/casxm/albert/yolov5/runs/train/sp1900_1213anchors/weights/last.pt"
+    model_path: "/home/casxm/albert/yolov5/runs/train/sp1900_1213anchors2/weights/last.pt"
 "13": 
   img_w: 2000
   img_h: 2048
   axis: 1
+  symmetry_channel: "12"
   splitter: 
     var_threshold: 1
     skip_num: 0
@@ -45,11 +47,11 @@
     minor_axis_affine_maxtrix: null # ax + b = y, then [a, b]
     auto_minor_axis_adjust: True
     method: "confidence"
-    label_translator : {0: "0", 1: "1",}
+    label_translator : {0: "0", 1: "1",2: "2"}
     iou_thres: 0.45
-    conf_thres: 0.65
+    conf_thres: 0.45
     imgsz: 640 
-    model_path: "/home/casxm/albert/yolov5/runs/train/sp1900_1213anchors/weights/last.pt"
+    model_path: "/home/casxm/albert/yolov5/runs/train/sp1900_1213anchors2/weights/last.pt"
 ####
 "14": 
   img_w: 2000
