@@ -58,7 +58,7 @@ class pyStar360RobotBase:
 
         self.splitter._dev_generate_car_template_(save_path)
 
-    def _dev_generate_anchors_(self, save_path, cutframe_idxes=None):
+    def _dev_generate_anchors_(self, save_path, cutframe_idxes=None, label_list=[]):
         if cutframe_idxes is not None:
             self.splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
         else:
@@ -82,7 +82,8 @@ class pyStar360RobotBase:
         self.locator.update_test_traininfo(test_startline, test_endline)
         self.locator.update_temp_traininfo(itemInfo["startline"], itemInfo["endline"])
         anchor_bboxes = json2bbox_formater(itemInfo.get("anchors", []))
-        self.locator._dev_generate_anchors_img_(anchor_bboxes, save_path, test_img, img_h, img_w)
+        self.locator._dev_generate_anchors_img_(anchor_bboxes, save_path, test_img, img_h, img_w,
+                     label_list=label_list)
     
     def _dev_generate_items_template_(self, save_path, cutframe_idxes=None):
         if cutframe_idxes is not None:
