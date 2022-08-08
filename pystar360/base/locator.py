@@ -63,7 +63,7 @@ class Locator:
         self.temp_endline = temp_endline
         self.temp_carspan = self.temp_endline - self.temp_startline
 
-    def locate_anchors_yolo(self, anchor_bboxes, test_img, img_h, img_w, **kwargs):
+    def locate_anchors_yolo(self, anchor_bboxes, test_img, img_h, img_w, use_ratio_adjust=True, **kwargs):
         # kwargs can be overwritten, so that you can include more anchors model 
         # anchor_bboxes = bbox_formater(self.itemInfo["anchors"])
         model_path = kwargs.get("model_path", self.local_params.model_path)
@@ -79,8 +79,9 @@ class Locator:
         new_anchor_bboxes = [] 
         for _, bbox in enumerate(anchor_bboxes):
             # get proposal rect in frame points
-            bbox.proposal_rect = cal_coord_by_ratio_adjustment(bbox.temp_rect, self.temp_startline, self.temp_carspan, 
-            self.test_startline, self.test_carspan, self.axis)
+            if use_ratio_adjust:
+                bbox.proposal_rect = cal_coord_by_ratio_adjustment(bbox.temp_rect, self.temp_startline, self.temp_carspan, 
+                self.test_startline, self.test_carspan, self.axis)
 
             # proposal rect from frame points to local pixel values 
             propoal_rect_p = frame2rect(bbox.proposal_rect, self.test_startline, 

@@ -39,9 +39,9 @@ def plt_bboxes_on_img(bboxes, img, img_h, img_w, startline,
         elif vis_lv < 2:
             text = concat_str(b.name, b.index)
         elif vis_lv < 3:
-            text = concat_str(b.name, b.index, b.conf_thres)
+            text = concat_str(b.name, b.index, b.conf_score)
         else:
-            text = concat_str(b.name, b.index, b.conf_thres)
+            text = concat_str(b.name, b.index, b.conf_score)
             proposal_points = frame2rect(b.proposal_rect, startline, img_h, img_w, axis=axis)
             cv2.rectangle(img, proposal_points[0], proposal_points[1], palette.PURPLE.value, 1)
         
