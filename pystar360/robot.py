@@ -7,10 +7,12 @@ from pystar360.base.dataStruct import json2bbox_formater
 
 
 class pyStar360RobotBase:
-    def __init__(self, qtrain_info, channel_param, item_params, template_path, device="cuda:0", logger=None):
+    def __init__(self, qtrain_info, channel_params_fpath, item_params_fpath, template_path, device="cuda:0", logger=None):
         self.qtrain_info = qtrain_info 
-        self.channel_params = read_yaml(channel_param)[str(qtrain_info.channel)]
-        self.item_params = read_yaml(item_params)
+        self.channel_params_fpath = channel_params_fpath
+        self.item_params_fpath = item_params_fpath
+        self.channel_params = read_yaml(channel_params_fpath)
+        self.item_params = read_yaml(item_params_fpath)
         self.template_path = Path(template_path) / str(qtrain_info.channel)
         self.device = device 
         self.logger = logger 
