@@ -163,8 +163,16 @@ class Splitter:
             temp_outputs =[]
             for i in range(shift):
                 index = cutframe_idx - ((shift // 2) * step) + (i * step)
-                startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
-                endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
+                # startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
+                # endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
+                startline = index - cover_range
+                endline = index + cover_range + 1
+                if startline < 0:
+                    startline = 0
+                    endline = startline + (2*cover_range + 1)
+                if endline > len(self.images_path_list) - 1:
+                    endline = len(self.images_path_list) - EPS
+                    startline = endline - (2*cover_range + 1)
 
                 if startline < endline:
                     img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
@@ -258,8 +266,17 @@ class Splitter:
             for i in range(shift):
                 # index = cutframe_idx + i - (shift // 2)
                 index = cutframe_idx - ((shift // 2) * step) + (i * step)
-                startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
-                endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
+                # startline = min(max(0, index - cover_range), len(self.images_path_list) - EPS)
+                # endline = max(0, min(len(self.images_path_list) - EPS, index + cover_range + 1))
+                startline = index - cover_range
+                endline = index + cover_range + 1
+                if startline < 0:
+                    startline = 0
+                    endline = startline + (2*cover_range + 1)
+                if endline > len(self.images_path_list) - 1:
+                    endline = len(self.images_path_list) - EPS
+                    startline = endline - (2*cover_range + 1)
+                    
                 if startline < endline:
                     img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
                     fname = save_path / f"{aux}_{self.minor_train_code}_{self.train_num}_{self.train_sn}_{self.channel}_{self.carriage}_{p}_{i}.jpg"
