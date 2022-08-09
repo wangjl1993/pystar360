@@ -277,6 +277,37 @@ def xyxy_nested(curr_rect, reff_rect):
     pt2 = [abs(curr_rect[1][0] - reff_rect[0][0]), abs(curr_rect[1][1] - reff_rect[0][1])]
     return [pt1, pt2]
 
+
+def ostu(s, th_start=0, th_end=256, th_step=1, return_hl=False):
+    """OSTU algorithm"""
+    max_sigma = 0
+    max_th = 0
+
+    for t in range(th_start, th_end, th_step):
+        bg = s[s <= t]
+        fg = s[s > t]
+
+        p0 = bg.size / s.size
+        p1 = fg.size / s.size
+
+        m0 = 0 if bg.size == 0 else bg.mean()
+        m1 = 0 if fg.size == 0 else fg.mean()
+
+        sigma = p0 * p1 * (m0 - m1) * (m0 - m1)
+
+        if sigma > max_sigma:
+            max_sigma = sigma
+            max_th = t
+
+    if return_hl:
+        bg = s[s <= max_th]
+        fg = s[s > max_th]
+        m0 = 0 if bg.size == 0 else bg.mean()
+        m1 = 0 if fg.size == 0 else fg.mean()
+        return int(max_th), m0, m1
+
+    return int(max_th)
+    
 ################################################################################
 #### TODO later 
 ################################################################################
