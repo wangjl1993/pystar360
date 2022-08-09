@@ -5,6 +5,9 @@ from pystar360.utilities.helper import concat_str, read_segmented_img, imread_fu
 from pystar360.base.dataStruct import json2bbox_formater
 
 
+################################################################################
+#### 这个robot base只是用于开发例子展示，不一定非要使用这个类
+################################################################################
 
 class pyStar360RobotBase:
     def __init__(self, qtrain_info, channel_params_fpath, item_params_fpath, template_path, device="cuda:0", logger=None):
@@ -70,6 +73,7 @@ class pyStar360RobotBase:
                         cutframe_idxes[self.qtrain_info.carriage])
         test_startline, test_endline = self.splitter.get_specific_cutpoints()
 
+        self.channel_params =  self.channel_params[str(self.qtrain_info.channel)]
         self.qtrain_info.test_train.startline = test_startline
         self.qtrain_info.test_train.endline = test_endline
         img_h = self.channel_params.img_h 
@@ -97,6 +101,7 @@ class pyStar360RobotBase:
                         cutframe_idxes[self.qtrain_info.carriage])
         test_startline, test_endline = self.splitter.get_specific_cutpoints()
 
+        self.channel_params =  self.channel_params[str(self.qtrain_info.channel)]
         self.qtrain_info.test_train.startline = test_startline
         self.qtrain_info.test_train.endline = test_endline
         img_h = self.channel_params.img_h 
@@ -105,7 +110,6 @@ class pyStar360RobotBase:
                 imread_full, axis=self.channel_params.axis)
         
         # locate
-
         template_path = self.template_path / "template.json"
         itemInfo = read_json(str(template_path))["carriages"][str(self.qtrain_info.carriage)]
 
