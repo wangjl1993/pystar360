@@ -46,7 +46,7 @@ def metric_collection_from_names(metric_names: List[str], prefix: Optional[str])
     Returns:
         AnomalibMetricCollection: Collection of metrics.
     """
-    metrics_module = importlib.import_module("uni360detection.ano.lib1.utils.metrics")
+    metrics_module = importlib.import_module("pystar360.ano.lib1.utils.metrics")
     metrics = AnomalibMetricCollection([], prefix=prefix, compute_groups=False)
     for metric_name in metric_names:
         if hasattr(metrics_module, metric_name):

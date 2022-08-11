@@ -13,7 +13,7 @@ def get_model(config: Union[DictConfig, ListConfig]) -> AnomalyModule:
     model: AnomalyModule
 
     if config.model.name in torch_model_list:
-        module = import_module(f"uni360detection.ano.lib1.models.{config.model.name}")
+        module = import_module(f"pystar360.ano.lib1.models.{config.model.name}")
         model = getattr(module, f"{config.model.name.capitalize()}Lightning")
     else:
         raise ValueError(f"Unknown model {config.model.name}!")
