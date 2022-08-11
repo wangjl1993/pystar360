@@ -1,4 +1,6 @@
 # overwritten
+**.ckpt
+**.pth
 *.ipynb
 *__pycache__/
 *.ipynb_checkpoints
