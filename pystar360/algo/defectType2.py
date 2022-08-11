@@ -50,7 +50,7 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             box.index = count 
             box.conf_score = score
             box.conf_thres = conf_thres
-            box.curr_rect = proposal_rect_f
+            # box.curr_rect = box.proposal_rect
             box.is_defect = 1 if score > conf_thres else 0
             box.is_detected = 1 
             box.description = f">>> box: {box.name}; score {score}; threshold: {conf_thres}."
