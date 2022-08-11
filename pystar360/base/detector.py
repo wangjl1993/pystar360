@@ -1,6 +1,7 @@
 from pystar360.algo.algoBase import NullDetection
-from pystar360.algo.defectType1 import *
-from pystar360.algo.defectType2 import *
+# from pystar360.algo.defectType1 import *
+# from pystar360.algo.defectType2 import *
+from importlib import import_module
 
 # 所有的检测方程都需要import, 为了能成功eval func 如 from xxx_algos import * 
 
@@ -59,8 +60,9 @@ class Detector:
 
             try:
                 # load func 
-                func_obj = eval(item_params.func)
-            except NameError:
+                # func_obj = eval(item_params.func)
+                func_obj = getattr(import_module(item_params.module), item_params.func)
+            except:
                 if self.logger:
                     self.logger.info(f">>> Fail to call {item_params.func}")
                 else:

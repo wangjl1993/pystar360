@@ -126,6 +126,7 @@ class BBox:
     is_3ddefect: int = 0
     value_3d: float = 0.
     value_3dthres: Union[float, List] = 0. 
+    is_detected: int = 0 # 是否被算法检查过
 
     def __post_init__(self):
         self.__validate()

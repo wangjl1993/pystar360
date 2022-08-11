@@ -46,6 +46,7 @@ class DetectItemsMissing(algoBaseABC):
             actual_num = len(outputs)
             box.conf_thres = self.item_params["conf_thres"]
             box.description = f">>> box: {box.name}; actual num: {actual_num}; num required: {num2check}."
+            box.is_detected = 1 
 
             # if len(outpus) == 0
             if  actual_num == 0 and num2check > 0:
