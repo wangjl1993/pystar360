@@ -73,7 +73,8 @@ class Detector:
             # init object 
             func = func_obj(item_params = item_params.params,
                             device = self.device,
-                            logger = self.logger)
+                            logger = self.logger,
+                            axis = self.axis)
              # sorting
             if self.axis == 0:
                 item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
