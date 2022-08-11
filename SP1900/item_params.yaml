@@ -1,5 +1,6 @@
 # yolo example 
 label_yolo:
+  module: "pystar360.algo.defectType1"
   func: "DetectItemsMissing"
   params:
     model_path: xx
@@ -10,6 +11,7 @@ label_yolo:
 
 # patchcore example 
 xx:
+  module: "pystar360.algo.defectType1"
   func: "DetectForeignObjectWholeImage"
   params:
     memory_bank_path: xx
