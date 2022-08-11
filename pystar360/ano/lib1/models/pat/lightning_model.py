@@ -43,7 +43,7 @@ class PatLightning(AnomalyModule):
 
     def __init__(self, hparams) -> None:
         super().__init__(hparams)
-        logger.info("Initializing Patchcore Lightning model.")
+        # logger.info("Initializing Patchcore Lightning model.")
 
         self.model: PatchcoreModel = PatchcoreModel(
             layers=hparams.model.layers,
