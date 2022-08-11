@@ -33,7 +33,7 @@ class PatchCoreInfer:
         extension = Path(self.memory_bank_path).suffix
         self.model: Inferencer
         if extension in (".ckpt", ".pth"):
-            module = import_module("uni360detection.ano.lib1.deploy.inferencers.torch")
+            module = import_module("pystar360.ano.lib1.deploy.inferencers.torch")
             TorchInferencer = getattr(module, "TorchInferencer")  # pylint: disable=invalid-name
             self.model = TorchInferencer(config=config, device=self.device, model_source=self.memory_bank_path,
             model_backbone_path=self.backbone_model_path, meta_data_path=None)
