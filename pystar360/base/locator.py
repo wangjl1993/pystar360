@@ -126,7 +126,7 @@ class Locator:
 
     def get_affine_transformation(self, anchor_bboxes):
         # if not anchor boxes provided 
-        if not anchor_bboxes:
+        if len(anchor_bboxes) < 1:
             # process main axis, add startline point and endline point, number of segments (+ 2 - 1 = + 1)
             self.temp_anchor_points = [self.temp_startline, self.temp_endline]
             self.curr_anchor_points = [self.test_startline, self.test_endline]
@@ -195,10 +195,10 @@ class Locator:
             #     second_ref = self.temp_endline
             #     second_cur = self.test_endline
             # else:
-            first_ref = temp_anchor_points[i - 1]
-            second_ref = temp_anchor_points[i]
-            first_cur = curr_anchor_points[i - 1]
-            second_cur = curr_anchor_points[i]
+            first_ref = temp_anchor_points[i]
+            second_ref = temp_anchor_points[i + 1]
+            first_cur = curr_anchor_points[i]
+            second_cur = curr_anchor_points[i + 1]
 
             ref_segl = second_ref - first_ref
             cur_segl = second_cur - first_cur
