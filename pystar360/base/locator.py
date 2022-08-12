@@ -155,10 +155,13 @@ class Locator:
             return []
 
         # process main axis
-        # add startline point and endline point (+ 2 - 1 = + 1)
-        # number of segments 
-        temp_anchor_points = [pt[self.main_axis] for pt in self.temp_anchor_points]
-        curr_anchor_points = [pt[self.main_axis] for pt in self.curr_anchor_points]
+        # add startline point and endline point, number of segments (+ 2 - 1 = + 1)
+        if len(self.temp_anchor_points) == 0 or len(self.curr_anchor_points) == 0:
+            temp_anchor_points = []
+            curr_anchor_points = []
+        else:
+            temp_anchor_points = [pt[self.main_axis] for pt in self.temp_anchor_points]
+            curr_anchor_points = [pt[self.main_axis] for pt in self.curr_anchor_points]
         seg_cnt = len(temp_anchor_points) + 1
         seg_cnt2 = len(curr_anchor_points) + 1
         assert seg_cnt == seg_cnt2
@@ -167,13 +170,21 @@ class Locator:
             # calculate reference span and test span
             if i == 0:
                 first_ref = self.temp_startline
-                second_ref = temp_anchor_points[i]
                 first_cur = self.test_startline
-                second_cur = curr_anchor_points[i]
+                try:
+                    second_ref = temp_anchor_points[i]
+                    second_cur = curr_anchor_points[i]
+                except IndexError:
+                    second_ref = self.temp_endline
+                    second_cur = self.test_endline
             elif i == seg_cnt - 1:
-                first_ref = temp_anchor_points[i - 1]
+                try:
+                    first_ref = temp_anchor_points[i - 1]
+                    first_cur = curr_anchor_points[i - 1]
+                except IndexError:
+                    first_ref = self.temp_startline
+                    first_cur = self.test_startline
                 second_ref = self.temp_endline
-                first_cur = curr_anchor_points[i - 1]
                 second_cur = self.test_endline
             else:
                 first_ref = temp_anchor_points[i - 1]
