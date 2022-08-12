@@ -6,10 +6,11 @@
 *.ipynb_checkpoints
 dev_CRH1A-A.yaml
 dev_CR300AF.yaml
+
 dataset
 CRH1A_A/
 CR300AF/
-# SP1900/
+SP1900/
 **.pt
 **.pth
 *.jpg
@@ -19,10 +20,9 @@ dev_panto.yaml
 
 dev*.yaml
 dev*.py
-!dev_SP1900.yaml
-!dev_test_api.py
 output/
 */template/**.jpg
+img/
 
 # Compiled source #
 ###################
