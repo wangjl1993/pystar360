@@ -165,8 +165,6 @@ class Locator:
             self.temp_anchor_points = [self.temp_startline] + self.temp_anchor_points + [self.temp_endline]
             self.curr_anchor_points = [self.test_startline] + self.curr_anchor_points + [self.test_endline]
 
-
-
     def locate_bboxes_according2anchors(self, bboxes):
         if not bboxes:
             return []
