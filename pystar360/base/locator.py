@@ -104,31 +104,6 @@ class Locator:
         
         return new_anchor_bboxes
 
-
-    def get_affine_transformation(self, anchor_bboxes):
-        # get template anchors and test anchors points
-        self.temp_anchor_points, self.curr_anchor_points = [], []
-        for anchor in anchor_bboxes:
-            self.temp_anchor_points.append(anchor.orig_rect[0]) # left top pt [x, y]
-            self.temp_anchor_points.append(anchor.orig_rect[1]) # right bottom pt [x, y]
-            self.curr_anchor_points.append(anchor.curr_rect[0]) # left top pt [x, y]
-            self.curr_anchor_points.append(anchor.curr_rect[1]) # right bottom pt [x, y]
-        
-        # sorting 
-        self.temp_anchor_points = sorted(self.temp_anchor_points, key=lambda a: a[self.main_axis])
-        self.curr_anchor_points = sorted(self.curr_anchor_points, key=lambda a: a[self.main_axis])
-        
-        # calculate minor axis shift using ax + b = y
-        if self.local_params.minor_axis_affine_maxtrix:
-            self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(self.local_params.minor_axis_affine_maxtrix)
-        elif self.local_params.auto_minor_axis_adjust:
-            variable_x = [pt[self.minor_axis] for pt in self.temp_anchor_points]
-            variable_y = [pt[self.minor_axis] for pt in self.curr_anchor_points]
-            self.minor_axis_poly_func = self._auto_update_minor_axis_affine_transform_matrix(variable_x, variable_y)
-        else:
-            raise NotImplementedError
-
-
     def _update_minor_axis_affine_transform_matrix(self, minor_axis_affine_maxtrix):
         """ minor_axis_affine_maxtrix is a list, for linear appro kx + b = y, then z = [k, b]"""
         try:
@@ -149,48 +124,83 @@ class Locator:
         minor_axis_poly_func = np.poly1d(z)
         return minor_axis_poly_func
 
-                
+    def get_affine_transformation(self, anchor_bboxes):
+        # if not anchor boxes provided 
+        if not anchor_bboxes:
+            # process main axis, add startline point and endline point, number of segments (+ 2 - 1 = + 1)
+            self.temp_anchor_points = [self.temp_startline, self.temp_endline]
+            self.curr_anchor_points = [self.test_startline, self.test_endline]
+            
+            # calculate minor axis shift using ax + b = y
+            if self.local_params.minor_axis_affine_maxtrix:
+                self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(self.local_params.minor_axis_affine_maxtrix)
+            else:
+                # y = 1*x + 0
+                self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix([1, 0])
+        else:
+            # get template anchors and test anchors points
+            self.temp_anchor_points, self.curr_anchor_points = [], []
+            for anchor in anchor_bboxes:
+                self.temp_anchor_points.append(anchor.orig_rect[0]) # left top pt [x, y]
+                self.temp_anchor_points.append(anchor.orig_rect[1]) # right bottom pt [x, y]
+                self.curr_anchor_points.append(anchor.curr_rect[0]) # left top pt [x, y]
+                self.curr_anchor_points.append(anchor.curr_rect[1]) # right bottom pt [x, y]
+
+            # sorting 
+            self.temp_anchor_points = sorted(self.temp_anchor_points, key=lambda a: a[self.main_axis])
+            self.curr_anchor_points = sorted(self.curr_anchor_points, key=lambda a: a[self.main_axis])
+        
+            # calculate minor axis shift using ax + b = y
+            if self.local_params.minor_axis_affine_maxtrix:
+                self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(self.local_params.minor_axis_affine_maxtrix)
+            elif self.local_params.auto_minor_axis_adjust:
+                variable_x = [pt[self.minor_axis] for pt in self.temp_anchor_points]
+                variable_y = [pt[self.minor_axis] for pt in self.curr_anchor_points]
+                self.minor_axis_poly_func = self._auto_update_minor_axis_affine_transform_matrix(variable_x, variable_y)
+            else:
+                raise NotImplementedError
+            
+            self.temp_anchor_points = [pt[self.main_axis] for pt in self.temp_anchor_points]
+            self.curr_anchor_points = [pt[self.main_axis] for pt in self.curr_anchor_points]
+            self.temp_anchor_points = [self.temp_startline] + self.temp_anchor_points + [self.temp_endline]
+            self.curr_anchor_points = [self.test_startline] + self.curr_anchor_points + [self.test_endline]
+
+
+
     def locate_bboxes_according2anchors(self, bboxes):
         if not bboxes:
             return []
 
-        # process main axis
-        # add startline point and endline point, number of segments (+ 2 - 1 = + 1)
-        if len(self.temp_anchor_points) == 0 or len(self.curr_anchor_points) == 0:
-            temp_anchor_points = []
-            curr_anchor_points = []
-        else:
-            temp_anchor_points = [pt[self.main_axis] for pt in self.temp_anchor_points]
-            curr_anchor_points = [pt[self.main_axis] for pt in self.curr_anchor_points]
-        seg_cnt = len(temp_anchor_points) + 1
-        seg_cnt2 = len(curr_anchor_points) + 1
+        temp_anchor_points = self.temp_anchor_points
+        curr_anchor_points = self.curr_anchor_points
+        seg_cnt = len(self.temp_anchor_points) - 1
+        seg_cnt2 = len(self.curr_anchor_points) - 1
         assert seg_cnt == seg_cnt2
-
         for i in range(seg_cnt):
             # calculate reference span and test span
-            if i == 0:
-                first_ref = self.temp_startline
-                first_cur = self.test_startline
-                try:
-                    second_ref = temp_anchor_points[i]
-                    second_cur = curr_anchor_points[i]
-                except IndexError:
-                    second_ref = self.temp_endline
-                    second_cur = self.test_endline
-            elif i == seg_cnt - 1:
-                try:
-                    first_ref = temp_anchor_points[i - 1]
-                    first_cur = curr_anchor_points[i - 1]
-                except IndexError:
-                    first_ref = self.temp_startline
-                    first_cur = self.test_startline
-                second_ref = self.temp_endline
-                second_cur = self.test_endline
-            else:
-                first_ref = temp_anchor_points[i - 1]
-                second_ref = temp_anchor_points[i]
-                first_cur = curr_anchor_points[i - 1]
-                second_cur = curr_anchor_points[i]
+            # if i == 0:
+            #     first_ref = self.temp_startline
+            #     first_cur = self.test_startline
+            #     try:
+            #         second_ref = temp_anchor_points[i]
+            #         second_cur = curr_anchor_points[i]
+            #     except IndexError:
+            #         second_ref = self.temp_endline
+            #         second_cur = self.test_endline
+            # elif i == seg_cnt - 1:
+            #     try:
+            #         first_ref = temp_anchor_points[i - 1]
+            #         first_cur = curr_anchor_points[i - 1]
+            #     except IndexError:
+            #         first_ref = self.temp_startline
+            #         first_cur = self.test_startline
+            #     second_ref = self.temp_endline
+            #     second_cur = self.test_endline
+            # else:
+            first_ref = temp_anchor_points[i - 1]
+            second_ref = temp_anchor_points[i]
+            first_cur = curr_anchor_points[i - 1]
+            second_cur = curr_anchor_points[i]
 
             ref_segl = second_ref - first_ref
             cur_segl = second_cur - first_cur
