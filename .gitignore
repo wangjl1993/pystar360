@@ -1,27 +1,12 @@
 # overwritten
 **.ckpt
 **.pth
-*.ipynb
+**.ipynb
+**.pt
 *__pycache__/
 *.ipynb_checkpoints
-dev_CRH1A-A.yaml
-dev_CR300AF.yaml
-dev*
-dataset
-CRH1A_A/
-CR300AF/
-SP1900/
-**.pt
-**.pth
-*.jpg
-uni360detection/spec
-dev_panto_api.py
-dev_panto.yaml
-dev*.yaml
-dev*.py
+dataset/
 output/
-*/template/**.jpg
-img/
 README.md
 
 # Compiled source #
