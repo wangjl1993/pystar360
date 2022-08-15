@@ -1,9 +1,8 @@
 
 from enum import Enum
 
-
+from pystar360.utilities._threading import threadingDecorator
 from pystar360.utilities.helper import *
-
 
 class palette(Enum):
     BLACK = (0, 0, 0)
@@ -14,6 +13,8 @@ class palette(Enum):
     PURPLE = (125, 38, 205)
     YELLOW = (255, 255, 102)
 
+
+@threadingDecorator
 def plt_bboxes_on_img(bboxes, img, img_h, img_w, startline,
                     axis=1, vis_lv=1, resize_ratio=0.1, 
                     default_color=palette.GREEN):

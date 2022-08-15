@@ -175,26 +175,6 @@ class Locator:
         seg_cnt2 = len(self.curr_anchor_points) - 1
         assert seg_cnt == seg_cnt2
         for i in range(seg_cnt):
-            # calculate reference span and test span
-            # if i == 0:
-            #     first_ref = self.temp_startline
-            #     first_cur = self.test_startline
-            #     try:
-            #         second_ref = temp_anchor_points[i]
-            #         second_cur = curr_anchor_points[i]
-            #     except IndexError:
-            #         second_ref = self.temp_endline
-            #         second_cur = self.test_endline
-            # elif i == seg_cnt - 1:
-            #     try:
-            #         first_ref = temp_anchor_points[i - 1]
-            #         first_cur = curr_anchor_points[i - 1]
-            #     except IndexError:
-            #         first_ref = self.temp_startline
-            #         first_cur = self.test_startline
-            #     second_ref = self.temp_endline
-            #     second_cur = self.test_endline
-            # else:
             first_ref = temp_anchor_points[i]
             second_ref = temp_anchor_points[i + 1]
             first_cur = curr_anchor_points[i]
