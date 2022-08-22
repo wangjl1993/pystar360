@@ -2,23 +2,32 @@
 from pathlib import Path
 from pystar360.utilities.fileManger import  read_yaml, write_json, read_json
 from pystar360.utilities.helper import concat_str, read_segmented_img, imread_full
+from pystar360.utilities.deviceController import get_torch_device, get_environ_info
 from pystar360.base.dataStruct import json2bbox_formater
 
+import pystar360.global_settings as SETTINGS
 
 ################################################################################
 #### 这个robot base只是用于开发例子展示，不一定非要使用这个类
 ################################################################################
 
 class pyStar360RobotBase:
-    def __init__(self, qtrain_info, channel_params_fpath, item_params_fpath, template_path, device="cuda:0", logger=None):
+    def __init__(self, qtrain_info, channel_params_fpath, item_params_fpath, template_path, device="cpu", logger=None):
         self.qtrain_info = qtrain_info 
         self.channel_params_fpath = channel_params_fpath
         self.item_params_fpath = item_params_fpath
         self.channel_params = read_yaml(channel_params_fpath)
         self.item_params = read_yaml(item_params_fpath)
         self.template_path = Path(template_path) / str(qtrain_info.channel)
-        self.device = device 
+        self.device = get_torch_device(device) 
         self.logger = logger 
+
+        if self.logger:
+            self.logger.info(f">>> Environment device: {get_environ_info()}")
+            self.logger.info(f">>> Using device: {self.device}")
+        else:
+            print(f">>> Environment device: {get_environ_info()}")
+            print(f">>> Using device: {self.device}")
 
     ###  example
     # def __post_init(self):

@@ -3,7 +3,9 @@ import numpy as np
 import torch
 import torchvision.models as models
 
+from functools import lru_cache
 
+@lru_cache(maxsize=32, typed=False) # 添加lru缓存机制
 class ClsInfer:
     def __init__(self, model_type, model_params, model_path, device, logger=None):
         self.model_type = model_type

@@ -3,19 +3,16 @@ import os
 import torch
 # import pynvml as p
 
-
-def use_cuda(no_cuda):
+def get_torch_device(device="0"):
     """
-    whether to use cuda according to user's input and available devices
+    device '0','1','2' or `cpu`
     """
-    return not no_cuda and torch.cuda.is_available()
-
-
-def get_device(use_cuda, index="0"):
-    """
-    device `cuda` or `cpu`
-    """
-    return torch.device(f"cuda:{str(index)}" if use_cuda else "cpu")
+    if isinstance(device, str):
+        if device.lower() == "cpu":
+            return torch.device("cpu")
+    if torch.cuda.is_available():
+        return torch.device(f"cuda:{str(device)}")
+    return torch.device("cpu")
 
 
 def get_environ_info():

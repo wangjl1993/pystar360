@@ -65,16 +65,17 @@ class Splitter:
                  train_library_path,
                  device,
                  axis=1,
-                 logger=None):
+                 logger=None,
+                 mac_password=None):
         
         # query information 
         self.qtrain_info = qtrain_info 
-        self.major_train_code = qtrain_info.major_train_code
-        self.minor_train_code = qtrain_info.minor_train_code
-        self.train_num = qtrain_info.train_num
-        self.train_sn = qtrain_info.train_sn
-        self.channel = qtrain_info.channel
-        self.carriage = qtrain_info.carriage
+        # self.major_train_code = qtrain_info.major_train_code
+        # self.minor_train_code = qtrain_info.minor_train_code
+        # self.train_num = qtrain_info.train_num
+        # self.train_sn = qtrain_info.train_sn
+        # self.channel = qtrain_info.channel
+        # self.carriage = qtrain_info.carriage
         
         # local params 
         self.params = local_params
@@ -83,11 +84,12 @@ class Splitter:
         self.images_path_list = images_path_list
 
         train_library_path = Path(train_library_path) / (qtrain_info.major_train_code + ".yaml")
-        self.train_dict = read_yaml(str(train_library_path))[self.minor_train_code]
+        self.train_dict = read_yaml(str(train_library_path))[self.qtrain_info.minor_train_code]
 
         self.device = device
         self.axis = axis
         self.logger = logger
+        self.mac_password = mac_password 
 
         self._cutframe_idx = None
     
@@ -147,7 +149,8 @@ class Splitter:
         model = YoloInfer(self.params.model_path,
                           self.device,
                           self.params.imgsz,
-                          logger=self.logger)
+                          logger=self.logger,
+                          mac_password=self.mac_password)
         if save_path:
             save_path = Path(save_path)
             save_path.mkdir(parents=True, exist_ok=True)
@@ -178,7 +181,7 @@ class Splitter:
                     img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
                     
                     if save_path:
-                        fname = save_path / f"{self.train_sn}_{self.minor_train_code}_{self.channel}_{self.car}_{p}_{i}.jpg"
+                        fname = save_path / f"{self.qtrain_info.train_sn}_{self.qtrain_info.minor_train_code}_{self.qtrain_info.channel}_{self.car}_{p}_{i}.jpg"
                         cv2.imwrite(str(fname), img)
 
                     img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
@@ -196,7 +199,7 @@ class Splitter:
 
     def _post_process(self, outputs, p):
         # return specific cutpoints
-        if (self.carriage == 1 and p == 0 ) or (self.carriage == self.train_dict.num and p == 1):
+        if (self.qtrain_info.carriage == 1 and p == 0 ) or (self.qtrain_info.carriage == self.train_dict.num and p == 1):
             outputs = [i for i in outputs if self.params.label_translator[int(i[0])] == "end"]
         else:
             outputs = [i for i in outputs if self.params.label_translator[int(i[0])] == "mid"]
@@ -207,13 +210,13 @@ class Splitter:
         max_output = select_best_yolobox(outputs, self.params.method)
         startline = max_output[6] #6: startline
         endline = max_output[7] #7: endline 
-        if self.carriage == 1 or self.carriage == self.train_dict.num: 
+        if self.qtrain_info.carriage == 1 or self.qtrain_info.carriage == self.train_dict.num: 
             # first carraige or last carriage 
             if self.axis == 1:
                 # x axis cutline 
                 point = yolo_xywh2xyxy(max_output[1:5], startline, 0, 1., endline-startline)
                 if p == 0:
-                    if self.carriage == self.train_dict.num:
+                    if self.qtrain_info.carriage == self.train_dict.num:
                         return point[1][0]
                     else:
                         return point[0][0]
@@ -223,7 +226,7 @@ class Splitter:
                 # y axis cutline
                 point = yolo_xywh2xyxy(max_output[1:5], 0, startline, endline-startline, 1.)
                 if p == 0:
-                    if self.carriage == self.train_dict.num:
+                    if self.qtrain_info.carriage == self.train_dict.num:
                         return point[1][1]
                     else:
                         return point[0][1]
@@ -279,7 +282,7 @@ class Splitter:
                     
                 if startline < endline:
                     img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
-                    fname = save_path / f"{aux}_{self.minor_train_code}_{self.train_num}_{self.train_sn}_{self.channel}_{self.carriage}_{p}_{i}.jpg"
+                    fname = save_path / f"{aux}_{self.qtrain_info.minor_train_code}_{self.qtrain_info.train_num}_{self.qtrain_info.train_sn}_{self.qtrain_info.channel}_{self.qtrain_info.carriage}_{p}_{i}.jpg"
                     cv2.imwrite(str(fname), img)
                     print(f">>> {fname}.")
 
@@ -293,12 +296,12 @@ class Splitter:
             self.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
                         cutframe_idxes[self.qtrain_info.carriage])
 
-        save_path = Path(save_path) / self.channel 
+        save_path = Path(save_path) / self.qtrain_info.channel 
         save_path.mkdir(parents=True, exist_ok=True)
         
         test_startline, test_endline = self.get_specific_cutpoints()
         img = read_segmented_img(self.images_path_list, test_startline, test_endline, imread, axis=self.axis)
-        fname = save_path / f"car_{self.carriage}.jpg"
+        fname = save_path / f"car_{self.qtrain_info.carriage}.jpg"
         cv2.imwrite(str(fname), img)
         print(f">>> {fname}.")
 

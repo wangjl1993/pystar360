@@ -31,7 +31,7 @@ def cal_new_pts(pt, temp_pts, first_ref, ref_segl, first_cur, cur_segl, main_axi
     return proposal_pts
 
 class Locator:
-    def __init__(self,  qtrain_info, local_params, device, axis=1, logger=None):
+    def __init__(self,  qtrain_info, local_params, device, axis=1, logger=None, mac_password=None):
         
         # query information 
         self.qtrain_info = qtrain_info
@@ -51,6 +51,7 @@ class Locator:
 
         # logger 
         self.logger = logger
+        self.mac_password = mac_password
 
     def update_test_traininfo(self, test_startline, test_endline):
         self.test_startline = test_startline
@@ -74,7 +75,8 @@ class Locator:
         iou_thres = kwargs.get("iou_thres", self.local_params.iou_thres)
 
         # load model 
-        model = YoloInfer(model_path, self.device, imgsz=imgsz, logger=self.logger)
+        model = YoloInfer(model_path, self.device, imgsz=imgsz, 
+                logger=self.logger, mac_password=self.mac_password)
 
         new_anchor_bboxes = [] 
         for _, bbox in enumerate(anchor_bboxes):

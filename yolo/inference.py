@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from functools import lru_cache
 
 import numpy as np
 import torch
@@ -9,13 +10,10 @@ from pystar360.yolo.utils.general import (check_img_size,
                                                 non_max_suppression,
                                                 scale_coords, xyxy2xywh)
 from pystar360.yolo.utils.torch_utils import time_sync
+from pystar360.utilities.crypt import decrpt_content_from_filepath
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())
-
-################################################################################
-#### YOLO v6.0
-################################################################################
 
 def yolo_xywh2xyxy(points, sx, sy, ref_h, ref_w):
 
@@ -31,6 +29,7 @@ def yolo_xywh2xyxy(points, sx, sy, ref_h, ref_w):
     y_bottom = sy + (y + half_h) * ref_h
 
     return [(x_left, y_top), (x_right, y_bottom)]
+
 
 def yolo_xywh2xyxy_v2(new_points, ref_points):
 
@@ -50,6 +49,7 @@ def yolo_xywh2xyxy_v2(new_points, ref_points):
 
     return [(x_left, y_top), (x_right, y_bottom)]
 
+
 def select_best_yolobox(candidates, method):
      # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence, 6:startline, 7:endline
     if method == "width":
@@ -64,6 +64,9 @@ def select_best_yolobox(candidates, method):
         raise NotImplementedError(f">>> method {method} is not implemented")
     return max_candidate
     
+################################################################################
+#### YOLO v6.0
+################################################################################
 def convert_img(img0, imgsz, stride):
     # Padded resize
     img = letterbox(img0, imgsz, stride=stride)[0]
@@ -73,22 +76,28 @@ def convert_img(img0, imgsz, stride):
 
     return img
 
-
+@lru_cache(maxsize=32, typed=False) # 添加lru缓存机制
 class YoloInfer:
-    def __init__(self, model_path, device, imgsz=640, logger=None):
+    def __init__(self, model_path, device, imgsz=640, logger=None, mac_password=None):
         self.model_path = model_path
         self.device = device
         self.imgsz = imgsz
         self.logger = logger
+        self.mac_password = mac_password
         self._initialize()
 
-    @torch.no_grad()
     def _initialize(self):
-        self.model = attempt_load(self.model_path,
-                                  device=self.device)  # load FP32 model
+        if self.mac_password:
+            fp = Path(self.model_path)
+            if self.model_path != ".pystar":
+                fname = fp.name + ".pystar"
+                fp = fp.parent / fname
+            content = decrpt_content_from_filepath(fp, self.mac_password)
+            self.model = attempt_load(content, device=self.device)
+        else:
+            self.model = attempt_load(self.model_path, device=self.device)  # load FP32 model
         self.stride = int(self.model.stride.max())  # model stride
-        self.imgsz = check_img_size(self.imgsz,
-                                    s=self.stride)  # check image size
+        self.imgsz = check_img_size(self.imgsz, s=self.stride)  # check image size
 
         # # Run inference
         # if self.device.type != "cpu":
@@ -101,7 +110,7 @@ class YoloInfer:
     def infer(
         self,
         img0,
-        conf_thres=0.45,  # confidence threshold
+        conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
         classes=None,  # filter by class: --class 0, or --class 0 2 3
@@ -133,13 +142,10 @@ class YoloInfer:
         for i, det in enumerate(pred):  # detections per image
             s, im0 = "", img0.copy()
 
-            gn = torch.tensor(im0.shape)[[1, 0, 1,
-                                          0]]  # normalization gain whwh
+            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             if len(det):
                 # Rescale boxes from img_size to im0 size
-                det[:, :4] = scale_coords(img.shape[2:], det[:, :4],
-                                          im0.shape).round()
-
+                det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
                 for *xyxy, conf, cls in reversed(det):
                     xywh = ((xyxy2xywh(torch.tensor(xyxy).view(1, 4)) /
                              gn).view(-1).tolist())  # normalized xywh
@@ -148,8 +154,9 @@ class YoloInfer:
 
         # Print time (inference + NMS)
         if self.logger:
-            self.logger.info(f"{s}Done. ({t2 - t1:.3f}s)")
-
+            self.logger.info(f">>> {s}Done. ({t2 - t1:.3f}s)")
+        # else:
+        #     print(f">>> {s}Done. ({t2 - t1:.3f}s)")
         return output
 
 if __name__ == "__main__":

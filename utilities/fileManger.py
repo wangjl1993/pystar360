@@ -6,6 +6,7 @@ from omegaconf import OmegaConf
 from pathlib import Path
 from filelock import FileLock  # mutex lock
 
+from pystar360.utilities.crypt import decrpt_content_from_filepath
 
 LABELME_TEMPLATE = {
             "version": "4.5.9",
@@ -52,14 +53,35 @@ def write_json(path, dict, lock=False, mode="w"):
     print(f">>> Generate {path}...")
 
 
-def read_json(path, mode="rb"):
+def read_json(fp, mode="rb", key=None, encrp_exts=".pystar"):
     """Read json"""
-    with open(path, mode) as f:
-        load_dict = json.load(f)
+    fp = Path(fp)
+    if key:
+        # if key provided, it means that we should try decrpt files 
+        if fp.suffix != encrp_exts:
+            fname = fp.name + ".pystar"
+            fp = fp.parent / fname
+        content = decrpt_content_from_filepath(fp, key, encrp_exts=encrp_exts)
+        load_dict = json.load(content)
+    else:
+        with open(fp, mode) as f:
+            load_dict = json.load(f)
     return load_dict
 
-def read_yaml(path):
-    return OmegaConf.load(path)
+
+def read_yaml(fp, key=None, encrp_exts=".pystar"):
+    fp = Path(fp)
+    if key:
+        # if key provided, it means that we should try decrpt files 
+        if fp.suffix != encrp_exts:
+            fname = fp.name + ".pystar"
+            fp = fp.parent / fname
+        content = decrpt_content_from_filepath(fp, key, encrp_exts=encrp_exts)
+        load_dict = OmegaConf.load(content)
+    else:
+       load_dict = OmegaConf.load(str(fp))
+    return load_dict
+
 
 def write_yaml(path, dict, lock=False):
     if lock:

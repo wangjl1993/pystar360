@@ -7,7 +7,6 @@ import cv2
 import copy
 
 from pystar360.algo.algoBase import algoBaseABC, algoDecorator
-# from uni360detection.base.dataStruct import BBox
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect
 
@@ -21,7 +20,8 @@ class DetectItemsMissing(algoBaseABC):
         
         # initialize model 
         model = YoloInfer(self.item_params["model_path"], self.device, 
-                        imgsz=self.item_params["imgsz"], logger=self.logger)
+                        imgsz=self.item_params["imgsz"], logger=self.logger, 
+                        mac_password=self.mac_password)
         
         # iterate 
         new_item_bboxes_list = []
@@ -109,3 +109,5 @@ class DetectItemsMissing(algoBaseABC):
                 print(box.description) 
 
         return new_item_bboxes_list
+
+

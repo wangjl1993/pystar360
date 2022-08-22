@@ -5,6 +5,7 @@ import torch
 import warnings 
 warnings.filterwarnings("ignore")
 
+from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
 
@@ -12,15 +13,17 @@ from pystar360.ano.lib1.post_processing import compute_mask
 from pystar360.ano.lib1.config import get_configurable_parameters
 from pystar360.ano.lib1.deploy.inferencers.base import Inferencer
     
+@lru_cache(maxsize=32, typed=False) # 添加lru缓存机制
 class PatchCoreInfer:
     def __init__(self, memory_bank_path, backbone_model_path,
-                config_path, device, image_size = 256, logger=None):
+                config_path, device, image_size = 256, logger=None, mac_password=None):
         self.memory_bank_path = memory_bank_path
         self.backbone_model_path = backbone_model_path
         self.config_path = config_path 
         self.device = device 
         self.image_size = image_size
         self.logger = logger 
+        self.mac_password = mac_password
         self._initialize()
 
     @torch.no_grad()

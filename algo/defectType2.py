@@ -23,7 +23,8 @@ class DetectForeignObjectWholeImage(algoBaseABC):
                                self.item_params["config_path"],
                                self.device,
                                image_size=self.item_params["image_size"],
-                               logger=self.logger)
+                               logger=self.logger,
+                               mac_password=self.mac_password)
         conf_thres = self.item_params["conf_thres"]
 
         # iterate 

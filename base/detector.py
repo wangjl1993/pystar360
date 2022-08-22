@@ -17,7 +17,7 @@ def bboxes_collector(bboxes):
 
 
 class Detector:
-    def __init__(self, qtrain_info, item_params, device, axis=1, logger=None):
+    def __init__(self, qtrain_info, item_params, device, axis=1, logger=None, mac_password=None):
         # query train informaiton 
         self.qtrain_info = qtrain_info
 
@@ -28,6 +28,7 @@ class Detector:
         self.device = device
         self.axis = axis 
         self.logger = logger 
+        self.mac_password = mac_password
 
     def detect_items(self, item_bboxes, test_img, test_startline, img_w, img_h):
         if not item_bboxes:
@@ -74,7 +75,8 @@ class Detector:
             func = func_obj(item_params = item_params.params,
                             device = self.device,
                             logger = self.logger,
-                            axis = self.axis)
+                            axis = self.axis,
+                            mac_pasword=self.mac_password)
              # sorting
             if self.axis == 0:
                 item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
