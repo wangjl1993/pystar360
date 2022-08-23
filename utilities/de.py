@@ -54,6 +54,7 @@ def decrpt_content_from_filepath(filepath, key, encrp_exts=".pystar"):
         
         # if its extention is .pystar, decrpt
         if filepath.suffix == encrp_exts:
+            encrypted_data = base64.urlsafe_b64encode(encrypted_data) #TODO
             content = Fernet(key).decrypt(encrypted_data)
         
         # get content
