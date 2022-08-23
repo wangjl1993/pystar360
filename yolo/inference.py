@@ -10,7 +10,7 @@ from pystar360.yolo.utils.general import (check_img_size,
                                                 non_max_suppression,
                                                 scale_coords, xyxy2xywh)
 from pystar360.yolo.utils.torch_utils import time_sync
-from pystar360.utilities.crypt import decrpt_content_from_filepath
+from pystar360.utilities.de import decrpt_content_from_filepath
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())
@@ -89,7 +89,7 @@ class YoloInfer:
     def _initialize(self):
         if self.mac_password:
             fp = Path(self.model_path)
-            if self.model_path != ".pystar":
+            if fp.suffix != ".pystar":
                 fname = fp.name + ".pystar"
                 fp = fp.parent / fname
             content = decrpt_content_from_filepath(fp, self.mac_password)

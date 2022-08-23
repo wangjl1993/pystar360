@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 from pathlib import Path
 from filelock import FileLock  # mutex lock
 
-from pystar360.utilities.crypt import decrpt_content_from_filepath
+from pystar360.utilities.de import decrpt_content_from_filepath
 
 LABELME_TEMPLATE = {
             "version": "4.5.9",

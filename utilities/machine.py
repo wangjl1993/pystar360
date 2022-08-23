@@ -193,4 +193,8 @@ def get_machine_code():
     return "-".join(s[i:i + n] for i in range(0, len(s), n))
 
 
+if __name__ == "__main__":
+    print(">>> \n")
+    print(f">>> {get_machine_code()}")
+
 

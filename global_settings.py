@@ -14,7 +14,7 @@ LOG_PATH: Union[str, Path] = Path.cwd() / "LOG"
 DATASET_PATH: Union[str, Path] = Path.cwd() / "DATASET"
 
 # machine code after encrption 
-from pystar360.utilities.crypt import get_mac_password 
+from pystar360.utilities.de import get_mac_password 
 # set do_decrpt=False, force program to read raw files 
 MAC_PASSWORD: Optional[str] = get_mac_password(do_decrpt=False) 
 

@@ -12,13 +12,13 @@ import pystar360.global_settings as SETTINGS
 ################################################################################
 
 class pyStar360RobotBase:
-    def __init__(self, qtrain_info, channel_params_fpath, item_params_fpath, template_path, device="cpu", logger=None):
+    def __init__(self, qtrain_info, device="cpu", logger=None):
         self.qtrain_info = qtrain_info 
-        self.channel_params_fpath = channel_params_fpath
-        self.item_params_fpath = item_params_fpath
-        self.channel_params = read_yaml(channel_params_fpath)
-        self.item_params = read_yaml(item_params_fpath)
-        self.template_path = Path(template_path) / str(qtrain_info.channel)
+        # self.channel_params_fpath = channel_params_fpath
+        # self.item_params_fpath = item_params_fpath
+        # self.channel_params = read_yaml(channel_params_fpath, key=SETTINGS.MAC_PASSWORD)
+        # self.item_params = read_yaml(item_params_fpath, key=SETTINGS.MAC_PASSWORD)
+        # self.template_path = Path(template_path) / str(qtrain_info.channel)
         self.device = get_torch_device(device) 
         self.logger = logger 
 
