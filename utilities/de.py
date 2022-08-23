@@ -32,11 +32,13 @@ def _generate_model_secret(s):
 
 def get_mac_password(do_decrpt: bool = False):
     if not do_decrpt:
+        print(">>> No decrption.")
         return None 
     from pystar360.utilities.machine import get_machine_code
     mac_code: str = get_machine_code()
     assert isinstance(mac_code, str), ">>> Mac code must be str"
     password = base64.urlsafe_b64encode(_generate_model_secret(mac_code))
+    print(">>> Use decrption.")
     return password 
 
 
