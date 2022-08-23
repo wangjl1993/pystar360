@@ -13,7 +13,11 @@ import pathlib
 import platform
 import subprocess
 
-import wmi  # type: ignore
+platform_str = platform.platform().lower()
+if "windows" in platform_str:
+    import wmi  # type: ignore
+else:
+    pass 
 
 class ComputerCodeGenerator:
     SEP_GROUP = ";"
