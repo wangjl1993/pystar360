@@ -397,3 +397,27 @@ def read_segmented_rect(l, rect, imread):
 #     x_right = x2pixel(points[1][0], sx, img_w)
 #     y_bottom = y2pixel(points[1][1], sy, img_h)
 #     return [(x_left, y_top), (x_right, y_bottom)]
+def trans_coords_from_chunk2frame(chunk_rect: list, item_rect: list):
+    """translate item coords from ref-chunk to ref-frame
+
+    Args:
+        chunk_rect (list): chunk coords (ref-frame)
+        item_rect (list): item coords (ref-chunk)
+
+    Returns:
+        _type_: item coords (ref-frame)
+    """
+    chunk_pt0, chunk_pt1 = chunk_rect
+    X0, Y0 = chunk_pt0
+    X1, Y1 = chunk_pt1
+    chunk_h, chunk_w = Y1-Y0, X1-X0
+
+    item_pt0, item_pt1 = item_rect
+    x0, y0 = item_pt0
+    x1, y1 = item_pt1
+
+    new_x0 = (x0*chunk_w)+X0
+    new_y0 = (y0*chunk_h)+Y0
+    new_x1 = (x1*chunk_w)+X0
+    new_y1 = (y1*chunk_h)+Y0
+    return [[new_x0, new_y0], [new_x1, new_y1]]
