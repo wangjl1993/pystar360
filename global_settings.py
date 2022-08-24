@@ -12,6 +12,7 @@ TRAIN_LIB_PATH: Union[str, Path] = Path.cwd() / MODULE_NAME / "train_library"
 OUTPUT_PATH:  Union[str, Path] = Path.cwd() / "OUTPUT"
 LOG_PATH: Union[str, Path] = Path.cwd() / "LOG"
 DATASET_PATH: Union[str, Path] = Path.cwd() / "DATASET"
+WEIGHT_PATH: Union[str, Path] = Path.cwd() / "weights"
 
 # machine code after encrption 
 from pystar360.utilities.de import get_mac_password 
