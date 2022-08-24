@@ -22,7 +22,8 @@ class DetectAtMostNObj(algoBaseABC):
         
         # initialize model 
         model = YoloInfer(self.item_params["model_path"], self.device, 
-                        imgsz=self.item_params["imgsz"], logger=self.logger)
+                        imgsz=self.item_params["imgsz"], logger=self.logger,
+                        mac_password=self.mac_password)
         
         # iterate 
         new_item_bboxes_list = []
