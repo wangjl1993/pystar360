@@ -2,9 +2,11 @@
 import numpy as np
 from copy import deepcopy
 from pystar360.utilities.fileManger import write_json, LABELME_TEMPLATE, LABELME_RECT_TEMPLATE
-from pystar360.base.dataStruct import json2bbox_formater
+from pystar360.base.dataStruct import json2bbox_formater, BBox
 from pystar360.utilities.helper import *
 from pystar360.yolo.inference import *
+from typing import List
+
 
 def cal_coord_by_ratio_adjustment(points, temp_startline, temp_carspan, test_startline, test_carspan, axis=1):
     if axis == 1: # horizontal 
@@ -204,6 +206,36 @@ class Locator:
                                             first_cur, cur_segl, self.main_axis, self.minor_axis_poly_func) 
 
         return bboxes
+
+    @staticmethod
+    def locate_bboxes_according2chunks(chunk_item_template: dict, chunks: List[BBox]):
+        """locate items according to chunks.
+
+        Args:
+            chunk_item_template (dict): _description_
+            chunks (List[BBox]): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        items = []
+        abnormal_chunks = []
+        for chunk in chunks:
+            chunk_label = chunk.label
+            # 如果yolo事先就没有检到chunk，那么chunk内的项点也无法继续检测判断，此时将chunk当做项点返回，是否报警再决定
+            if chunk.is_defect:
+                abnormal_chunks.append(chunk)
+            else:
+                for item in chunk_item_template[chunk_label]:
+                    name, num2check = get_label_num2check(item["label"])
+                    box = BBox(label=item["label"], name=name, num2check=num2check)
+                    box.orig_rect = item["orig_rect"]
+                    box.temp_rect = item["temp_rect"]
+                    rect = trans_coords_from_chunk2frame(chunk.curr_rect.to_list(), item["orig_rect"])
+                    box.proposal_rect = rect
+                    box.curr_rect = rect
+                    items.append(box)
+        return items, abnormal_chunks
 
     def _dev_generate_anchors_img_(self, anchor_bboxes, save_path, test_img, img_h, img_w, aux="anchors", label_list=[]):
         save_path = Path(save_path)
