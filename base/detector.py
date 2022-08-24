@@ -76,7 +76,7 @@ class Detector:
                             device = self.device,
                             logger = self.logger,
                             axis = self.axis,
-                            mac_pasword=self.mac_password)
+                            mac_password=self.mac_password)
              # sorting
             if self.axis == 0:
                 item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
