@@ -17,11 +17,6 @@ class algoDecorator:
         else:
             print(f'>>> Function executed in {(t2-t1):.6f}s')
         return result 
-
-class algoBaseABC:
-    def __init__(self, **kwargs):
-        for key, item in kwargs.items():
-            setattr(self, key, item)  
             
 # def algoDecorator(func):
 #     # This function shows the execution time of 
@@ -34,6 +29,10 @@ class algoBaseABC:
 #         return result
 #     return wrap_func
 
+class algoBaseABC:
+    def __init__(self, **kwargs):
+        for key, item in kwargs.items():
+            setattr(self, key, item)  
 
 @algoDecorator
 class NullDetection(algoBaseABC):
