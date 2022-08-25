@@ -1,12 +1,11 @@
 
 import numpy as np
 from copy import deepcopy
+from pathlib import Path
 from pystar360.utilities.fileManger import write_json, LABELME_TEMPLATE, LABELME_RECT_TEMPLATE
-from pystar360.base.dataStruct import json2bbox_formater, BBox
+from pystar360.base.dataStruct import BBox
+from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2, select_best_yolobox
 from pystar360.utilities.helper import *
-from pystar360.yolo.inference import *
-from typing import List
-
 
 def cal_coord_by_ratio_adjustment(points, temp_startline, temp_carspan, test_startline, test_carspan, axis=1):
     if axis == 1: # horizontal 
@@ -31,6 +30,32 @@ def cal_new_pts(pt, temp_pts, first_ref, ref_segl, first_cur, cur_segl, main_axi
     else:
         proposal_pts = [new_pt, min(max(minor_axis_poly_func(points[1]), 0), 1)]
     return proposal_pts
+
+
+def trans_coords_from_chunk2frame(chunk_rect: list, item_rect: list):
+    """translate item coords from ref-chunk to ref-frame
+
+    Args:
+        chunk_rect (list): chunk coords (ref-frame)
+        item_rect (list): item coords (ref-chunk)
+
+    Returns:
+        _type_: item coords (ref-frame)
+    """
+    chunk_pt0, chunk_pt1 = chunk_rect
+    X0, Y0 = chunk_pt0
+    X1, Y1 = chunk_pt1
+    chunk_h, chunk_w = Y1-Y0, X1-X0
+
+    item_pt0, item_pt1 = item_rect
+    x0, y0 = item_pt0
+    x1, y1 = item_pt1
+
+    new_x0 = (x0*chunk_w)+X0
+    new_y0 = (y0*chunk_h)+Y0
+    new_x1 = (x1*chunk_w)+X0
+    new_y1 = (y1*chunk_h)+Y0
+    return [[new_x0, new_y0], [new_x1, new_y1]]
 
 class Locator:
     def __init__(self,  qtrain_info, local_params, device, axis=1, logger=None, mac_password=None):
@@ -208,34 +233,26 @@ class Locator:
         return bboxes
 
     @staticmethod
-    def locate_bboxes_according2chunks(chunk_item_template: dict, chunks: List[BBox]):
-        """locate items according to chunks.
-
-        Args:
-            chunk_item_template (dict): _description_
-            chunks (List[BBox]): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        items = []
-        abnormal_chunks = []
-        for chunk in chunks:
-            chunk_label = chunk.label
-            # 如果yolo事先就没有检到chunk，那么chunk内的项点也无法继续检测判断，此时将chunk当做项点返回，是否报警再决定
-            if chunk.is_defect:
-                abnormal_chunks.append(chunk)
+    def locate_bboxes_according2template(bboxes, template):
+        """locate items according to chunks template"""
+        item_boxes = []
+        defect_boxes = []
+        for box in bboxes:
+            if box.is_defect:
+                # 如果yolo事先就没有检到chunk，那么chunk内的项点也无法继续检测判断，此时将chunk/box当做项点返回，是否报警再决定
+                defect_boxes.append(box)
             else:
-                for item in chunk_item_template[chunk_label]:
+                label = box.label
+                for item in template[label]:
                     name, num2check = get_label_num2check(item["label"])
                     box = BBox(label=item["label"], name=name, num2check=num2check)
                     box.orig_rect = item["orig_rect"]
                     box.temp_rect = item["temp_rect"]
-                    rect = trans_coords_from_chunk2frame(chunk.curr_rect.to_list(), item["orig_rect"])
+                    rect = trans_coords_from_chunk2frame(box.curr_rect.to_list(), item["orig_rect"])
                     box.proposal_rect = rect
                     box.curr_rect = rect
-                    items.append(box)
-        return items, abnormal_chunks
+                    item_boxes.append(box)
+        return item_boxes, defect_boxes
 
     def _dev_generate_anchors_img_(self, anchor_bboxes, save_path, test_img, img_h, img_w, aux="anchors", label_list=[]):
         save_path = Path(save_path)
@@ -280,10 +297,3 @@ class Locator:
                 json_fname = save_path / (fname + ".json")
                 write_json(str(json_fname), new_template)
                 print(f">>> {fname}.")
-
-
-def locate_dynamic_chunks():
-    pass 
-
-def locate_static_chunks():
-    pass 
