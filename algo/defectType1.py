@@ -10,6 +10,7 @@ from pystar360.algo.algoBase import algoBaseABC, algoDecorator
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect
 
+from pystar360.utilities._logger import d_logger
 
 @algoDecorator
 class DetectItemsMissing(algoBaseABC):
@@ -57,7 +58,7 @@ class DetectItemsMissing(algoBaseABC):
                 if self.logger:
                     self.logger.info(box.description)
                 else:
-                    print(box.description) 
+                    d_logger.info(box.description) 
                 # update list 
                 new_item_bboxes_list.append(box)
                 count += 1
@@ -106,7 +107,7 @@ class DetectItemsMissing(algoBaseABC):
             if self.logger:
                 self.logger.info(box.description)
             else:
-                print(box.description) 
+                d_logger.info(box.description) 
 
         return new_item_bboxes_list
 

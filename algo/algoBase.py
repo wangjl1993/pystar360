@@ -1,6 +1,6 @@
 
 from time import time
-
+from pystar360.utilities._logger import d_logger
 
 class algoDecorator:
     def __init__(self, function, logger=None):
@@ -15,7 +15,7 @@ class algoDecorator:
             # self.logger.info(f'>>> Function {self.function.__name__!r} executed in {(t2-t1):.4f}s')
             self.logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
         else:
-            print(f'>>> Function executed in {(t2-t1):.6f}s')
+            d_logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
         return result 
             
 # def algoDecorator(func):

@@ -9,7 +9,7 @@ import copy
 from pystar360.algo.algoBase import algoBaseABC, algoDecorator
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect
-
+from pystar360.utilities._logger import d_logger
 
 @algoDecorator
 class DetectAtMostNObj(algoBaseABC):
@@ -58,6 +58,6 @@ class DetectAtMostNObj(algoBaseABC):
             if self.logger:
                 self.logger.info(box.description)
             else:
-                print(box.description) 
+                d_logger.info(box.description) 
 
         return new_item_bboxes_list

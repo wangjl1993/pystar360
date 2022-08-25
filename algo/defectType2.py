@@ -10,6 +10,8 @@ from pystar360.utilities.helper import crop_segmented_rect, frame2rect
 from pystar360.ano.inference import PatchCoreInfer
 
 
+from pystar360.utilities._logger import d_logger
+
 @algoDecorator
 class DetectForeignObjectWholeImage(algoBaseABC):
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
@@ -61,7 +63,7 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             if self.logger:
                 self.logger.info(box.description)
             else:
-                print(box.description) 
+                d_logger.info(box.description) 
         
         return new_item_bboxes_list
 
