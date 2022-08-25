@@ -4,6 +4,7 @@ from pystar360.utilities.fileManger import  read_yaml, write_json, read_json
 from pystar360.utilities.helper import concat_str, read_segmented_img, imread_full
 from pystar360.utilities.deviceController import get_torch_device, get_environ_info
 from pystar360.base.dataStruct import json2bbox_formater
+from pystar360.utilities._logger import d_logger
 
 import pystar360.global_settings as SETTINGS
 
@@ -26,8 +27,8 @@ class pyStar360RobotBase:
             self.logger.info(f">>> Environment device: {get_environ_info()}")
             self.logger.info(f">>> Using device: {self.device}")
         else:
-            print(f">>> Environment device: {get_environ_info()}")
-            print(f">>> Using device: {self.device}")
+            d_logger.info(f">>> Environment device: {get_environ_info()}")
+            d_logger.info(f">>> Using device: {self.device}")
 
     ###  example
     # def __post_init(self):

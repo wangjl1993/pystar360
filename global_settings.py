@@ -22,5 +22,3 @@ MAC_PASSWORD: Optional[str] = get_mac_password(do_decrpt=False)
 # print product information 
 from pystar360.utilities.misc import print_product_info
 print_product_info()
-
-    

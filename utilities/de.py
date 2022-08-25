@@ -32,7 +32,8 @@ def _generate_model_secret(s):
 
 def get_mac_password(do_decrpt: bool = False):
     if not do_decrpt:
-        print(">>> No decrption.")
+        from pystar360.utilities._logger import d_logger
+        d_logger.debug(">>> No decrption.")
         return None 
     from pystar360.utilities.machine import get_machine_code
     mac_code: str = get_machine_code()

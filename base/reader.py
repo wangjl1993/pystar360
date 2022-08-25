@@ -4,9 +4,9 @@ from abc import ABCMeta, abstractclassmethod
 from pathlib import Path
 
 from pystar360.utilities.helper import get_img_size, imread_full
+from pystar360.utilities._logger import d_logger
 
 __all__ = ["ImReader"]
-
 
 class ImReaderABC(metaclass=ABCMeta):
     @abstractclassmethod
@@ -57,7 +57,7 @@ class ImReader(ImReaderABC):
             
         except Exception as e:
             if self.debug:
-                print(e)
+                d_logger.info(e)
             raise FileNotFoundError(f">>> {str(self.images_path)}没有找到相对应的图像路径，请检查后路径是否正确") 
         
         if len(self._image_path_list) != 0:
@@ -70,7 +70,7 @@ class ImReader(ImReaderABC):
                     f">>> The number of images listed in the given path: {self.__len__()}"
                 )
             else:
-                print(
+                d_logger.info(
                     f">>> The number of images listed in the given path: {self.__len__()}"
                 )
         else:

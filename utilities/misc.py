@@ -1,3 +1,5 @@
+from pystar360.utilities._logger import d_logger
+
 COMPANY_STRING = """
         ************************************************************************************
         ************************************************************************************
@@ -16,6 +18,6 @@ def print_product_info(logger=None):
         if logger:
                 logger.info(COMPANY_STRING)
         else:
-                print(COMPANY_STRING)
+                 d_logger.info(COMPANY_STRING)
 
 

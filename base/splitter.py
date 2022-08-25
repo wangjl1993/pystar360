@@ -5,9 +5,10 @@ from pathlib import Path
 import functools
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
-from pystar360.utilities.fileManger import *
-from pystar360.utilities.helper import *
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy, select_best_yolobox
+from pystar360.utilities.fileManger import read_yaml
+from pystar360.utilities.helper import *
+from pystar360.utilities._logger import d_logger
 
 EPS = 1e-6
 
@@ -60,7 +61,7 @@ def find_approximate_single_end(l,
         raise ValueError(">>> 图像数据质量可能存在以下问题，1、光照过度曝光或过暗；2、拍摄是否完整；")
 
     if debug:
-        print(f">>> Aprroximate ends frame: {str(l[idx])}; variation {var1}; direction: {reverse}")
+        d_logger.info(f">>> Aprroximate ends frame: {str(l[idx])}; variation {var1}; direction: {reverse}")
     return idx
     
 
@@ -140,7 +141,7 @@ class Splitter:
             raise ValueError()
 
         if self.debug:
-            print(f">>> Given cutframe index: {cutframe_idx}")
+            d_logger.info(f">>> Given cutframe index: {cutframe_idx}")
         self.cutframe_idx = cutframe_idx
 
     def get_specific_cutpoints(self,
@@ -190,7 +191,7 @@ class Splitter:
                     startline = endline - (2*cover_range + 1)
 
                 if self.debug: # DEBUG
-                    print(f">>> Order: {p}; Start cutline: {startline}, End cutline: {endline};")
+                    d_logger.info(f">>> Order: {p}; Start cutline: {startline}, End cutline: {endline};")
 
                 if startline < endline:
                     img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
@@ -297,7 +298,7 @@ class Splitter:
                     img = read_segmented_img(self.images_path_list, startline, endline, imread, axis=self.axis)
                     fname = save_path / f"{aux}_{self.qtrain_info.minor_train_code}_{self.qtrain_info.train_num}_{self.qtrain_info.train_sn}_{self.qtrain_info.channel}_{self.qtrain_info.carriage}_{p}_{i}.jpg"
                     cv2.imwrite(str(fname), img)
-                    print(f">>> {fname}.")
+                    d_logger.info(f">>> {fname}.")
 
     def _dev_generate_car_template_(self, save_path, cutframe_idxes=None, imread=imread_quarter):
         # generate cut points for development 
@@ -316,5 +317,5 @@ class Splitter:
         img = read_segmented_img(self.images_path_list, test_startline, test_endline, imread, axis=self.axis)
         fname = save_path / f"car_{self.qtrain_info.carriage}.jpg"
         cv2.imwrite(str(fname), img)
-        print(f">>> {fname}.")
+        d_logger.info(f">>> {fname}.")
 

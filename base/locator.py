@@ -7,6 +7,8 @@ from pystar360.base.dataStruct import BBox
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2, select_best_yolobox
 from pystar360.utilities.helper import *
 
+from pystar360.utilities._logger import d_logger
+
 def cal_coord_by_ratio_adjustment(points, temp_startline, temp_carspan, test_startline, test_carspan, axis=1):
     if axis == 1: # horizontal 
         pts1 = [(points[0][0] - temp_startline) / temp_carspan * test_carspan + test_startline, points[0][1]]
@@ -134,8 +136,8 @@ class Locator:
                 new_anchor_bboxes.append(bbox)
         
         if self.debug:
-            print(f">>> Num of anchors before processing: {len(anchor_bboxes)}")
-            print(f">>> Num of anchors after processing: {len(new_anchor_bboxes)}")
+            d_logger.info(f">>> Num of anchors before processing: {len(anchor_bboxes)}")
+            d_logger.info(f">>> Num of anchors after processing: {len(new_anchor_bboxes)}")
         
         return new_anchor_bboxes
 
@@ -201,8 +203,8 @@ class Locator:
             self.curr_anchor_points = [self.test_startline] + self.curr_anchor_points + [self.test_endline]
         
         if self.debug:
-            print(f">>> Minor axis adjustment [linear transformation]: {self.minor_axis_poly_func}")
-            print(f">>> Main axis adjustment [ratio adjustment]: {len(self.temp_anchor_points)} points")
+            d_logger.info(f">>> Minor axis adjustment [linear transformation]: {self.minor_axis_poly_func}")
+            d_logger.info(f">>> Main axis adjustment [ratio adjustment]: {len(self.temp_anchor_points)} points")
         
 
     def locate_bboxes_according2anchors(self, bboxes):
@@ -268,7 +270,7 @@ class Locator:
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
 
-        print(">>> Start cropping...")
+        d_logger.info(">>> Start cropping...")
         # anchor_bboxes = json2bbox_formater(self.itemInfo["anchors"])
         for idx, bbox in enumerate(anchor_bboxes):
             if bbox.name in label_list or len(label_list) == 0:
@@ -306,4 +308,4 @@ class Locator:
                 cv2.imwrite(str(img_fname), proposal_rect_img)
                 json_fname = save_path / (fname + ".json")
                 write_json(str(json_fname), new_template)
-                print(f">>> {fname}.")
+                d_logger.info(f">>> {fname}.")

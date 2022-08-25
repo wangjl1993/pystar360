@@ -1,8 +1,7 @@
-from pystar360.algo.algoBase import NullDetection
-# from pystar360.algo.defectType1 import *
-# from pystar360.algo.defectType2 import *
 from importlib import import_module
 
+from pystar360.algo.algoBase import NullDetection
+from pystar360.utilities._logger import d_logger
 # 所有的检测方程都需要import, 为了能成功eval func 如 from xxx_algos import * 
 
 def bboxes_collector(bboxes):
@@ -40,14 +39,14 @@ class Detector:
         if self.logger:
             self.logger.info(f">>> Start detection...")
         else:
-            print(f">>> Start detection...")
+            d_logger.info(f">>> Start detection...")
 
         new_item_bboxes = []
         for label_name, item_bboxes_list in item_bboxes_dict.items():
             if self.logger:
                 self.logger.info(f">>> Processing items with label: {label_name}")
             else:
-                print(f">>> Processing items with label: {label_name}")
+                d_logger.info(f">>> Processing items with label: {label_name}")
 
             try:
                 # load params 
@@ -56,7 +55,7 @@ class Detector:
                 if self.logger:
                     self.logger.info(f">>> Params not provided. Skip items with label: {label_name}")
                 else:
-                    print(f">>> Params not provided. Skip items with label: {label_name}")
+                    d_logger.info(f">>> Params not provided. Skip items with label: {label_name}")
                 new_item_bboxes.extend(item_bboxes_list)
                 continue 
 
@@ -68,7 +67,7 @@ class Detector:
                 if self.logger:
                     self.logger.info(f">>> Fail to call {item_params.func}")
                 else:
-                    print(f">>> Fail to call {item_params.func}")
+                    d_logger.info(f">>> Fail to call {item_params.func}")
                 new_item_bboxes.extend(item_bboxes_list)
                 continue 
             
@@ -94,7 +93,7 @@ class Detector:
         if self.logger:
             self.logger.info(f">>> Finished detection...")
         else:
-            print(f">>> Finished detection...")
+            d_logger.info(f">>> Finished detection...")
             
         return new_item_bboxes
 
