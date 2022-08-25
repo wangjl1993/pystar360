@@ -58,7 +58,8 @@ def trans_coords_from_chunk2frame(chunk_rect: list, item_rect: list):
     return [[new_x0, new_y0], [new_x1, new_y1]]
 
 class Locator:
-    def __init__(self,  qtrain_info, local_params, device, axis=1, logger=None, mac_password=None):
+    def __init__(self,  qtrain_info, local_params, device, axis=1, logger=None,
+            debug=False,mac_password=None):
         
         # query information 
         self.qtrain_info = qtrain_info
@@ -78,6 +79,7 @@ class Locator:
 
         # logger 
         self.logger = logger
+        self.debug = debug
         self.mac_password = mac_password
 
     def update_test_traininfo(self, test_startline, test_endline):
@@ -89,7 +91,7 @@ class Locator:
          # template information 
         self.temp_startline = temp_startline
         self.temp_endline = temp_endline
-        self.temp_carspan = self.temp_endline - self.temp_startline
+        self.temp_carspan = abs(self.temp_endline - self.temp_startline)
 
     def locate_anchors_yolo(self, anchor_bboxes, test_img, img_h, img_w, use_ratio_adjust=True, **kwargs):
         # kwargs can be overwritten, so that you can include more anchors model 
@@ -130,6 +132,10 @@ class Locator:
                 bbox.score = max_output[0]
                 bbox.conf_thres = conf_thres
                 new_anchor_bboxes.append(bbox)
+        
+        if self.debug:
+            print(f">>> Num of anchors before processing: {len(anchor_bboxes)}")
+            print(f">>> Num of anchors after processing: {len(new_anchor_bboxes)}")
         
         return new_anchor_bboxes
 
@@ -193,6 +199,11 @@ class Locator:
             self.curr_anchor_points = [pt[self.main_axis] for pt in self.curr_anchor_points]
             self.temp_anchor_points = [self.temp_startline] + self.temp_anchor_points + [self.temp_endline]
             self.curr_anchor_points = [self.test_startline] + self.curr_anchor_points + [self.test_endline]
+        
+        if self.debug:
+            print(f">>> Minor axis adjustment [linear transformation]: {self.minor_axis_poly_func}")
+            print(f">>> Main axis adjustment [ratio adjustment]: {len(self.temp_anchor_points)} points")
+        
 
     def locate_bboxes_according2anchors(self, bboxes):
         if not bboxes:
@@ -203,6 +214,7 @@ class Locator:
         seg_cnt = len(self.temp_anchor_points) - 1
         seg_cnt2 = len(self.curr_anchor_points) - 1
         assert seg_cnt == seg_cnt2
+        
         for i in range(seg_cnt):
             first_ref = temp_anchor_points[i]
             second_ref = temp_anchor_points[i + 1]
@@ -217,13 +229,11 @@ class Locator:
             for _, bbox in enumerate(bboxes):
                 pt0 = max(bbox.temp_rect[0][self.main_axis], self.temp_startline)
                 pt1 = min(bbox.temp_rect[1][self.main_axis], self.temp_endline)
-
                 if first_ref <= pt0 <= second_ref:
                     bbox.proposal_rect[0] = cal_new_pts(pt0, bbox.temp_rect[0], first_ref, ref_segl,
                                             first_cur, cur_segl, self.main_axis, self.minor_axis_poly_func)
                     bbox.curr_rect[0] = cal_new_pts(pt0, bbox.orig_rect[0], first_ref, ref_segl,
                                             first_cur, cur_segl, self.main_axis, self.minor_axis_poly_func) 
-
                 if first_ref <= pt1 <= second_ref:
                     bbox.proposal_rect[1] = cal_new_pts(pt1, bbox.temp_rect[1], first_ref, ref_segl,
                                             first_cur, cur_segl, self.main_axis, self.minor_axis_poly_func)

@@ -17,7 +17,8 @@ def bboxes_collector(bboxes):
 
 
 class Detector:
-    def __init__(self, qtrain_info, item_params, device, axis=1, logger=None, mac_password=None):
+    def __init__(self, qtrain_info, item_params, device, axis=1, logger=None,
+                debug=False, mac_password=None):
         # query train informaiton 
         self.qtrain_info = qtrain_info
 
@@ -28,6 +29,7 @@ class Detector:
         self.device = device
         self.axis = axis 
         self.logger = logger 
+        self.debug = debug
         self.mac_password = mac_password
 
     def detect_items(self, item_bboxes, test_img, test_startline, img_w, img_h):
@@ -46,7 +48,6 @@ class Detector:
                 self.logger.info(f">>> Processing items with label: {label_name}")
             else:
                 print(f">>> Processing items with label: {label_name}")
-
 
             try:
                 # load params 
@@ -76,7 +77,8 @@ class Detector:
                             device = self.device,
                             logger = self.logger,
                             axis = self.axis,
-                            mac_password=self.mac_password)
+                            mac_password=self.mac_password,
+                            debug = self.debug)
              # sorting
             if self.axis == 0:
                 item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
@@ -97,7 +99,7 @@ class Detector:
         return new_item_bboxes
 
 
-    def _dev_item_null_detection_(self, item_bboxes):
+    def _dev_item_null_detection_(self, item_bboxes, *args):
         if not item_bboxes:
             return [] 
 
@@ -106,7 +108,6 @@ class Detector:
         new_item_bboxes = []
         for _, item_bboxes_list in item_bboxes_dict.items():
             
-            func = NullDetection()
             # sorting
             if self.axis == 0:
                 item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
@@ -114,6 +115,7 @@ class Detector:
                 item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
             
             # run func
+            func = NullDetection()
             local_item_bboxes = func(item_bboxes_list)
             new_item_bboxes.extend(local_item_bboxes)
 
