@@ -5,7 +5,7 @@ from typing import Union, Optional
 # basic settings 
 MODULE_NAME =  Path(__file__).parent.name
 DEV: bool = False # if it's in development mode 
-VIZ: bool = True  # visualize output 
+VIZ: bool = False  # visualize output 
 VIZ_LV: int = 1  # visualize level 
 NEED_HIST: bool = False # need HISTORY image processing or not
 TRAIN_LIB_PATH: Union[str, Path] = Path.cwd() / MODULE_NAME / "train_library"
