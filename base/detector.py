@@ -57,7 +57,7 @@ class Detector:
                     self.logger.info(f">>> Params not provided. Skip items with label: {label_name}")
                 else:
                     d_logger.info(f">>> Params not provided. Skip items with label: {label_name}")
-                new_item_bboxes.extend(item_bboxes_list)
+                # new_item_bboxes.extend(item_bboxes_list)
                 continue
 
             try:
@@ -69,7 +69,7 @@ class Detector:
                     self.logger.info(f">>> Fail to call {item_params.func}")
                 else:
                     d_logger.info(f">>> Fail to call {item_params.func}")
-                new_item_bboxes.extend(item_bboxes_list)
+                # new_item_bboxes.extend(item_bboxes_list)
                 continue
 
             # init object
