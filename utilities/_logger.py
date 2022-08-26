@@ -1,29 +1,6 @@
 # -*- coding: utf-8 -*-
-import os
-import sys 
 import logging
 from pathlib import Path
-from sqlite3 import paramstyle
-
-class DataLogger(object):
-    """
-    Data logging
-    """
-
-    def __init__(self, file_name, *args):
-        self.file_name = file_name
-        self.update(*args, mode="w")
-
-    def update(self, *args, mode="a"):
-        with open(self.file_name, mode) as f:
-            DataLogger._write(f, *args)
-
-    @staticmethod
-    def _write(f, *args):
-        string = ",".join(map(str, args)) + "\n"
-        f.write(string)
-        f.flush()
-
 
 def get_logger(
     log_name,
