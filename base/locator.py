@@ -203,7 +203,7 @@ class Locator:
             self.curr_anchor_points = [self.test_startline] + self.curr_anchor_points + [self.test_endline]
         
         if self.debug:
-            d_logger.info(f">>> Minor axis adjustment [linear transformation]: {self.minor_axis_poly_func}")
+            d_logger.info(f">>> Minor axis adjustment [linear transformation]: {self.minor_axis_poly_func.coefficients}")
             d_logger.info(f">>> Main axis adjustment [ratio adjustment]: {len(self.temp_anchor_points)} points")
         
 
