@@ -1,11 +1,11 @@
-
 from time import time
 from pystar360.utilities._logger import d_logger
 
+
 class algoDecorator:
     def __init__(self, function, logger=None):
-        self.function = function 
-        self.logger = logger 
+        self.function = function
+        self.logger = logger
 
     def __call__(self, *args, **kwargs):
         t1 = time()
@@ -16,10 +16,11 @@ class algoDecorator:
             self.logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
         else:
             d_logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
-        return result 
-            
+        return result
+
+
 # def algoDecorator(func):
-#     # This function shows the execution time of 
+#     # This function shows the execution time of
 #     # the function object passed
 #     def wrap_func(*args, **kwargs):
 #         t1 = time()
@@ -29,23 +30,25 @@ class algoDecorator:
 #         return result
 #     return wrap_func
 
+
 class algoBaseABC:
     def __init__(self, **kwargs):
         for key, item in kwargs.items():
-            setattr(self, key, item)  
+            setattr(self, key, item)
+
 
 @algoDecorator
 class NullDetection(algoBaseABC):
     def __call__(self, item_bboxes_list):
-        # if empty, return empty 
+        # if empty, return empty
         if not item_bboxes_list:
             return []
 
         new_item_bboxes_list = []
         count = 1
         for _, box in enumerate(item_bboxes_list):
-            box.index =  count 
+            box.index = count
             new_item_bboxes_list.append(box)
-            count += 1 
+            count += 1
 
         return new_item_bboxes_list

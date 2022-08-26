@@ -13,10 +13,7 @@ class imread_decorator:
     def __call__(self, path, size=None, mode=cv2.IMREAD_GRAYSCALE):
         img = cv2.imread(path, mode)
         if size is None:
-            img = cv2.resize(img,
-                             None,
-                             fx=self.resize_ratio,
-                             fy=self.resize_ratio)
+            img = cv2.resize(img, None, fx=self.resize_ratio, fy=self.resize_ratio)
         else:
             img = cv2.resize(img, size)
         return img
@@ -53,6 +50,7 @@ def get_label_num2check(mystr, separator="="):
         return output[0], int(output[1])
     else:
         raise ValueError(f"Please provide a valid label. {mystr} vs {output}")
+
 
 def frame2index(frame, length):
     """Frame to index and pixel shift"""
@@ -115,7 +113,7 @@ def read_segmented_img(l, startline, endline, imread, imgsz=None, axis=1):
         img = imread(start_f)[:, start_p:]
 
     if start_idx != end_idx:
-        tmp_l = l[start_idx + 1:end_idx]
+        tmp_l = l[start_idx + 1 : end_idx]
         for f in tmp_l:
             tmp_img = imread(f)
             if axis == 0:
@@ -130,13 +128,15 @@ def read_segmented_img(l, startline, endline, imread, imgsz=None, axis=1):
             img = np.concatenate((img, tmp_img), axis=axis)
 
         tmp_img = imread(end_f)
-        img = np.concatenate((img, tmp_img[:end_p, :]), axis=axis) if axis == 0 \
-        else np.concatenate((img, tmp_img[:, :end_p]), axis=axis)
+        img = (
+            np.concatenate((img, tmp_img[:end_p, :]), axis=axis)
+            if axis == 0
+            else np.concatenate((img, tmp_img[:, :end_p]), axis=axis)
+        )
 
     else:
         tmp_img = imread(end_f)
-        img = tmp_img[
-            start_p:end_p, :] if axis == 0 else tmp_img[:, start_p:end_p]
+        img = tmp_img[start_p:end_p, :] if axis == 0 else tmp_img[:, start_p:end_p]
 
     return img
 
@@ -161,7 +161,7 @@ def x2pixel(x, sx, img_w, axis=1):
     """frame values (float) to pixel (int) in x direction"""
     if axis == 0:
         o = int(np.ceil((x - sx) * img_w))
-        o = min(max(o, 0), img_w - 1) 
+        o = min(max(o, 0), img_w - 1)
     else:
         o = int(np.ceil((x - sx) * img_w))
         o = max(o, 0)
@@ -172,14 +172,14 @@ def y2pixel(y, sy, img_h, axis=1):
     """frame values (float) to pixel (int) in y direction"""
     if axis == 0:
         o = int(np.ceil((y - sy) * img_h))
-        o = max(o, 0) 
+        o = max(o, 0)
     else:
         o = int(np.ceil((y - sy) * img_h))
         o = min(max(o, 0), img_h - 1)
     return o
 
 
-def frame2rect(points, start_main_axis_fp, img_h, img_w,  start_minor_axis_fp=0, axis=1):
+def frame2rect(points, start_main_axis_fp, img_h, img_w, start_minor_axis_fp=0, axis=1):
     """frame values (float) to pixel (int) in both horizontal and vertical direction
     start_main_axis_fp: x startline if x-axis is the main direction / y startline if y-axis is the main direction
     """
@@ -188,26 +188,20 @@ def frame2rect(points, start_main_axis_fp, img_h, img_w,  start_minor_axis_fp=0,
         sy = start_main_axis_fp
     else:
         sx = start_main_axis_fp
-        sy = start_minor_axis_fp 
+        sy = start_minor_axis_fp
 
-    # left top points 
+    # left top points
     x_left = x2pixel(points[0][0], sx, img_w, axis=axis)
     y_top = y2pixel(points[0][1], sy, img_h, axis=axis)
-    # right bottom points 
+    # right bottom points
     x_right = x2pixel(points[1][0], sx, img_w, axis=axis)
     y_bottom = y2pixel(points[1][1], sy, img_h, axis=axis)
     return [[x_left, y_top], [x_right, y_bottom]]
 
 
-def expanding_rect(points,
-                   whole_img_h,
-                   whole_img_w,
-                   expand_ratio=1,
-                   limit=False,
-                   x_max=None,
-                   y_max=None,
-                   x_min=None,
-                   y_min=None):
+def expanding_rect(
+    points, whole_img_h, whole_img_w, expand_ratio=1, limit=False, x_max=None, y_max=None, x_min=None, y_min=None
+):
     """Expand or narrow rect size for labelme data"""
 
     if isinstance(expand_ratio, float) or isinstance(expand_ratio, int):
@@ -249,11 +243,13 @@ def expanding_rect(points,
 
 def crop_segmented_rect(img, rect):
     """crop partial region from a 2D image"""
-    img = img[rect[0][1]:rect[1][1], rect[0][0]:rect[1][0]]
+    img = img[rect[0][1] : rect[1][1], rect[0][0] : rect[1][0]]
     return img
+
 
 def pixel2fp(p, sp, length):
     return max(0, p / length + sp)
+
 
 # frame2rect(points, start_main_axis_fp, img_h, img_w,  start_minor_axis_fp=0, axis=1)
 def rect2frame(points, start_main_axis_px, img_h, img_w, start_minor_axis_px=0, axis=1):
@@ -263,7 +259,7 @@ def rect2frame(points, start_main_axis_px, img_h, img_w, start_minor_axis_px=0, 
         sy = start_main_axis_px
     else:
         sx = start_main_axis_px
-        sy = start_minor_axis_px 
+        sy = start_minor_axis_px
 
     x_left = pixel2fp(points[0][0], sx, img_w)
     y_top = pixel2fp(points[0][1], sy, img_h)
@@ -271,6 +267,7 @@ def rect2frame(points, start_main_axis_px, img_h, img_w, start_minor_axis_px=0, 
     y_bottom = pixel2fp(points[1][1], sy, img_h)
 
     return [[x_left, y_top], [x_right, y_bottom]]
+
 
 def xyxy_nested(curr_rect, reff_rect):
     pt1 = [abs(curr_rect[0][0] - reff_rect[0][0]), abs(curr_rect[0][1] - reff_rect[0][1])]
@@ -307,9 +304,10 @@ def ostu(s, th_start=0, th_end=256, th_step=1, return_hl=False):
         return int(max_th), m0, m1
 
     return int(max_th)
-    
+
+
 ################################################################################
-#### TODO later 
+#### TODO later
 ################################################################################
 
 
@@ -356,10 +354,10 @@ def read_segmented_rect(l, rect, imread):
     """Read rectangle"""
     img_h = imread(l[0]).shape[0]
     img = read_segmented_img(l, rect[0][0], rect[1][0], imread)
-    y_top, y_bottom = y2pixel(rect[0][1], 0,
-                              img_h), y2pixel(rect[1][1], 0, img_h)
+    y_top, y_bottom = y2pixel(rect[0][1], 0, img_h), y2pixel(rect[1][1], 0, img_h)
     img = img[y_top:y_bottom, :]
     return img
+
 
 # def imread_decorator(resize_ratio):
 #     """Image read (GRAY)"""

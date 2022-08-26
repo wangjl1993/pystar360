@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import torch
+
 # import pynvml as p
+
 
 def get_torch_device(device="0"):
     """

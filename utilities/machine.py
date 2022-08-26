@@ -17,7 +17,8 @@ platform_str = platform.platform().lower()
 if "windows" in platform_str:
     import wmi  # type: ignore
 else:
-    pass 
+    pass
+
 
 class ComputerCodeGenerator:
     SEP_GROUP = ";"
@@ -54,12 +55,7 @@ class ComputerCodeGenerator:
         if include_stdout:
             args = {'stdout': subprocess.PIPE}
 
-        args.update({
-            'env': env,
-            'startupinfo': si,
-            'stdin': subprocess.PIPE,
-            'stderr': subprocess.PIPE,
-        })
+        args.update({'env': env, 'startupinfo': si, 'stdin': subprocess.PIPE, 'stderr': subprocess.PIPE})
         return args
 
 
@@ -99,10 +95,9 @@ class LinuxHostCodeGenerator(ComputerCodeGenerator):
 
 
 class MacHostCodeGenerator(ComputerCodeGenerator):
-
     def generate_machine_id(self, **kwargs):
         res = self.start_process(["system_profiler", "SPHardwareDataType"])
-        return self.get_sha256(res[res.index("UUID"):].strip())
+        return self.get_sha256(res[res.index("UUID") :].strip())
 
 
 class WindowsHostCodeGenerator(ComputerCodeGenerator):
@@ -158,11 +153,7 @@ class WindowsHostCodeGenerator(ComputerCodeGenerator):
 
     def generate_machine_id(self, **kwargs):
         v = kwargs.pop("v", 1)
-        return self.get_sha256(
-            self.SEP_GROUP.join([
-                self.get_product_id(v),
-                self.get_long_term_hardware_devices()
-            ]))
+        return self.get_sha256(self.SEP_GROUP.join([self.get_product_id(v), self.get_long_term_hardware_devices()]))
 
     def get_product_id(self, v):
         output = self.start_process(["cmd.exe", "/C", "wmic", "csproduct", "get", "uuid"])
@@ -170,7 +161,7 @@ class WindowsHostCodeGenerator(ComputerCodeGenerator):
             return output.decode('utf-8')
         elif v == 2:
             raw_output = output.decode('utf-8')
-            return raw_output[raw_output.index("UUID") + 4:].strip("\r\n\t ")
+            return raw_output[raw_output.index("UUID") + 4 :].strip("\r\n\t ")
         else:
             raise ValueError("Version can be either 1 or 2.")
 
@@ -194,11 +185,9 @@ def code_generator_factory() -> ComputerCodeGenerator:
 def get_machine_code():
     n = 4  # len of group
     s = code_generator_factory().generate_machine_id(v=2)
-    return "-".join(s[i:i + n] for i in range(0, len(s), n))
+    return "-".join(s[i : i + n] for i in range(0, len(s), n))
 
 
 if __name__ == "__main__":
     print(">>> \n")
     print(f">>> {get_machine_code()}")
-
-

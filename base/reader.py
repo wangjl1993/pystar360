@@ -8,6 +8,7 @@ from pystar360.utilities._logger import d_logger
 
 __all__ = ["ImReader"]
 
+
 class ImReaderABC(metaclass=ABCMeta):
     @abstractclassmethod
     def _get_filters(self):
@@ -20,14 +21,9 @@ class ImReaderABC(metaclass=ABCMeta):
 
 @functools.lru_cache(maxsize=8)
 class ImReader(ImReaderABC):
-    def __init__(self,
-                 images_path,
-                 channel,
-                 filter_ext=(".jpg"),
-                 check_files=True,
-                 logger=None,
-                 debug=False,
-                 verbose=False):
+    def __init__(
+        self, images_path, channel, filter_ext=(".jpg"), check_files=True, logger=None, debug=False, verbose=False
+    ):
 
         self.images_path = images_path
         self.channel = channel
@@ -51,28 +47,22 @@ class ImReader(ImReaderABC):
                     self._image_path_list = myfilter(self._image_path_list)
 
             # sorted files in an acsending order
-            self._image_path_list = sorted(self._image_path_list,
-                                        key=lambda x:
-                                        (int(re.sub("\D", "", x.name)), x))
-            
+            self._image_path_list = sorted(self._image_path_list, key=lambda x: (int(re.sub("\D", "", x.name)), x))
+
         except Exception as e:
             if self.debug:
                 d_logger.info(e)
-            raise FileNotFoundError(f">>> {str(self.images_path)}没有找到相对应的图像路径，请检查后路径是否正确") 
-        
+            raise FileNotFoundError(f">>> {str(self.images_path)}没有找到相对应的图像路径，请检查后路径是否正确")
+
         if len(self._image_path_list) != 0:
             if self.check_files:
                 self._check_file()
-            
+
             self._image_path_list = list(map(str, self._image_path_list))
             if self.logger:
-                self.logger.info(
-                    f">>> The number of images listed in the given path: {self.__len__()}"
-                )
+                self.logger.info(f">>> The number of images listed in the given path: {self.__len__()}")
             else:
-                d_logger.info(
-                    f">>> The number of images listed in the given path: {self.__len__()}"
-                )
+                d_logger.info(f">>> The number of images listed in the given path: {self.__len__()}")
         else:
             raise FileNotFoundError(f">>> The number of images listed in the given path: {self.__len__()}")
 
@@ -96,8 +86,6 @@ class ImReader(ImReaderABC):
 
     def _get_filters(self):
         filter_rules = []
-        filter_rule1 = lambda l: [
-            p for p in l if p.stem.split("-")[0] == self.channel
-        ]
+        filter_rule1 = lambda l: [p for p in l if p.stem.split("-")[0] == self.channel]
         filter_rules.append(filter_rule1)
         return filter_rules

@@ -12,12 +12,11 @@ COMPANY_STRING = """
         ***                  溯星360列车智能故障检测系统-PyStar360                       ***
         ************************************************************************************
         ************************************************************************************
-        """ 
+        """
+
 
 def print_product_info(logger=None):
-        if logger:
-                logger.info(COMPANY_STRING)
-        else:
-                 d_logger.info(COMPANY_STRING)
-
-
+    if logger:
+        logger.info(COMPANY_STRING)
+    else:
+        d_logger.info(COMPANY_STRING)
