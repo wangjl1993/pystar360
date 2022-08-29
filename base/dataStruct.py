@@ -207,7 +207,6 @@ def json2bbox_formater(bboxes):
 
     # bboxes: dict
     bboxes = sorted(bboxes, key=lambda x: x["temp_rect"][0][0])
-
     new_bboxes = []
     for b in bboxes:
         name, num2check = get_label_num2check(b["label"])
@@ -217,6 +216,17 @@ def json2bbox_formater(bboxes):
         new_bboxes.append(box)
 
     return new_bboxes
+
+
+def bboxes_collector(bboxes):
+    """collect items according to its label"""
+    output = {}
+    for b in bboxes:
+        if b.name in output:
+            output[b.name].append(b)
+        else:
+            output[b.name] = [b]
+    return output
 
 
 @dataclass_json

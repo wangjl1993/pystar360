@@ -1,20 +1,10 @@
 from importlib import import_module
 
+from pystar360.base.dataStruct import bboxes_collector
 from pystar360.algo.algoBase import NullDetection
 from pystar360.utilities._logger import d_logger
 
 # 所有的检测方程都需要import, 为了能成功eval func 如 from xxx_algos import *
-
-
-def bboxes_collector(bboxes):
-    """collect items according to its label"""
-    output = {}
-    for b in bboxes:
-        if b.name in output:
-            output[b.name].append(b)
-        else:
-            output[b.name] = [b]
-    return output
 
 
 class Detector:
