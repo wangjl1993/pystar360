@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 
-def get_logger(log_name, save_path=None, l_level=logging.DEBUG):
+def get_logger(log_name, save_path=None, l_level=logging.DEBUG, do_simple=False):
 
     # Create a custom logger
     d_logger = logging.getLogger(log_name)
@@ -13,10 +13,15 @@ def get_logger(log_name, save_path=None, l_level=logging.DEBUG):
     # Create console handlers
     c_handler = logging.StreamHandler()
     c_handler.setLevel(l_level)
-    format = logging.Formatter(
-        "|".join(["%(levelname)s", "%(asctime)-.23s", "[%(filename)s%(lineno)d]:%(message)s"]),
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    if do_simple:
+        format = logging.Formatter(
+            "|".join(["%(levelname)s", "%(asctime)-.23s", ":%(message)s"]), datefmt="%Y-%m-%d %H:%M:%S"
+        )
+    else:
+        format = logging.Formatter(
+            "|".join(["%(levelname)s", "%(asctime)-.23s", "[%(filename)s%(lineno)d]:%(message)s"]),
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
     c_handler.setFormatter(format)
     d_logger.addHandler(c_handler)
     d_logger.propagate = False
