@@ -300,13 +300,13 @@ class Locator:
                 label = box.label
                 for item in template[label]:
                     name, num2check = get_label_num2check(item["label"])
-                    box = BBox(label=item["label"], name=name, num2check=num2check)
-                    box.orig_rect = item["orig_rect"]
-                    box.temp_rect = item["temp_rect"]
+                    item_box = BBox(label=item["label"], name=name, num2check=num2check)
+                    item_box.orig_rect = item["orig_rect"]
+                    item_box.temp_rect = item["temp_rect"]
                     rect = trans_coords_from_chunk2frame(box.curr_rect.to_list(), item["orig_rect"])
-                    box.proposal_rect = rect
-                    box.curr_rect = rect
-                    item_boxes.append(box)
+                    item_box.proposal_rect = rect
+                    item_box.curr_rect = rect
+                    item_boxes.append(item_box)
         return item_boxes, defect_boxes
 
     def _dev_generate_anchors_img_(
