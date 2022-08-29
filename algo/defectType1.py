@@ -14,6 +14,21 @@ from pystar360.utilities._logger import d_logger
 
 @algoDecorator
 class DetectItemsMissing(algoBaseABC):
+    """检测是否丢失
+
+    yaml example
+    ------------
+    xxxx:
+    module: "pystar360.algo.defectType1"
+    func: "DetectItemsMissing"
+    params:
+        model_path: "xxxx.pt"
+        imgsz: 640
+        conf_thres: 0.45
+        iou_thres: 0.2
+        label_translator: {0: 'xxxx'}
+    """
+
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
         # if empty, return empty
         if not item_bboxes_list:
@@ -110,9 +125,10 @@ class DetectItemsMissing(algoBaseABC):
                 else:
                     pass
 
-            if self.logger:
-                self.logger.info(box.description)
-            else:
-                d_logger.info(box.description)
+            if self.debug:
+                if self.logger:
+                    self.logger.info(box.description)
+                else:
+                    d_logger.info(box.description)
 
         return new_item_bboxes_list

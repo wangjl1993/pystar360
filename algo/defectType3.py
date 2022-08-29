@@ -13,7 +13,19 @@ from pystar360.utilities._logger import d_logger
 
 @algoDecorator
 class DetectAtMostNObj(algoBaseABC):
-    """检测最多N个obj，如果n=0， 检测出一个目标就算报错"""
+    """检测最多N个obj，如果n=0， 检测出一个目标就算报错
+    yaml example
+    ------------
+    xxx【玻璃裂痕破损】:
+        module: "pystar360.algo.defectType3"
+        func: "DetectAtMostNObj"
+        params:
+            model_path: "xxxx.pt"
+            imgsz: 640
+            conf_thres: 0.45
+            iou_thres: 0.2
+            at_most_n: 0
+    """
 
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
         # if empty, return empty
@@ -28,6 +40,7 @@ class DetectAtMostNObj(algoBaseABC):
             logger=self.logger,
             mac_password=self.mac_password,
         )
+        at_most_n = self.item_params.get("at_most_n", 0)
 
         # iterate
         new_item_bboxes_list = []
@@ -47,7 +60,7 @@ class DetectAtMostNObj(algoBaseABC):
             )
 
             actual_num = len(outputs)
-            if actual_num > self.item_params["at_most_n"]:
+            if actual_num > at_most_n:
                 # 0:class, 1:ctrx, 2:ctry, 3;w, 4:h, 5:confidence,
                 max_outputs = max(outputs, key=lambda x: x[5])
                 box.conf_score = max_outputs[5]
@@ -61,9 +74,10 @@ class DetectAtMostNObj(algoBaseABC):
             new_item_bboxes_list.append(box)
             count += 1
 
-            if self.logger:
-                self.logger.info(box.description)
-            else:
-                d_logger.info(box.description)
+            if self.debug:
+                if self.logger:
+                    self.logger.info(box.description)
+                else:
+                    d_logger.info(box.description)
 
         return new_item_bboxes_list

@@ -15,6 +15,22 @@ from pystar360.utilities._logger import d_logger
 
 @algoDecorator
 class DetectForeignObjectWholeImage(algoBaseABC):
+    """检测是否异常，异物/破损都可以使用
+    yaml example
+    ------------
+    xxx:
+        module: "pystar360.algo.defectType2"
+        func: "DetectForeignObjectWholeImage"
+        params:
+            memory_bank_path: ".xxxx.ckpt"
+            backbone_model_path: ".resnet18.ckpt"
+            config_path: "./pystar360/ano/lib1/models/pat/config.yaml"
+            image_size: 256
+            conf_thres: 0.5
+            flip_lr: False # 是否左右翻转
+            flip_ud: False # 是否上下翻转
+    """
+
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
         # if empty, return empty
         if not item_bboxes_list:
@@ -62,10 +78,11 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             new_item_bboxes_list.append(box)
             count += 1
 
-            if self.logger:
-                self.logger.info(box.description)
-            else:
-                d_logger.info(box.description)
+            if self.debug:
+                if self.logger:
+                    self.logger.info(box.description)
+                else:
+                    d_logger.info(box.description)
 
         return new_item_bboxes_list
 
