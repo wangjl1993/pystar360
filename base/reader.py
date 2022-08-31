@@ -7,6 +7,7 @@ from pystar360.utilities.helper import get_img_size, imread_full
 from pystar360.utilities._logger import d_logger
 
 __all__ = ["ImReader"]
+MAXSIZE_CACHE = 16
 
 
 class ImReaderABC(metaclass=ABCMeta):
@@ -19,7 +20,7 @@ class ImReaderABC(metaclass=ABCMeta):
         raise NotImplementedError
 
 
-@functools.lru_cache(maxsize=8)
+@functools.lru_cache(maxsize=MAXSIZE_CACHE)
 class ImReader(ImReaderABC):
     def __init__(
         self, images_path, channel, filter_ext=(".jpg"), check_files=True, logger=None, debug=False, verbose=False

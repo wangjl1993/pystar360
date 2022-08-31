@@ -129,7 +129,6 @@ class YoloInfer:
         # Inference
         t1 = time_sync()
         pred = self.model(img, augment=False, visualize=False)[0]
-
         # Apply NMS
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
         t2 = time_sync()

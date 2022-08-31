@@ -10,9 +10,9 @@ from pystar360.utilities.helper import *
 from pystar360.utilities._logger import d_logger
 
 EPS = 1e-6
+MAXSIZE_CACHE = 32
 
-
-@functools.lru_cache(maxsize=16)
+@functools.lru_cache(maxsize=MAXSIZE_CACHE)
 def find_approximate_single_end(
     l,
     var_threshold=1,
