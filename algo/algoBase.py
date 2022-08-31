@@ -1,4 +1,4 @@
-from time import time
+from pystar360.utilities.deviceController import time_sync
 from pystar360.utilities._logger import d_logger
 
 
@@ -8,9 +8,9 @@ class algoDecorator:
         self.logger = logger
 
     def __call__(self, *args, **kwargs):
-        t1 = time()
+        t1 = time_sync()
         result = self.function(*args, **kwargs)
-        t2 = time()
+        t2 = time_sync()
         if self.logger:
             # self.logger.info(f'>>> Function {self.function.__name__!r} executed in {(t2-t1):.4f}s')
             self.logger.info(f'>>> Function executed in {(t2-t1):.6f}s')

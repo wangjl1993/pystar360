@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
+import time
 import torch
 
 # import pynvml as p
+def time_sync():
+    # PyTorch-accurate time
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    return time.time()
 
 
 def get_torch_device(device="0"):
