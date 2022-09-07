@@ -12,6 +12,7 @@ from pystar360.utilities._logger import d_logger
 EPS = 1e-6
 MAXSIZE_CACHE = 32
 
+
 @functools.lru_cache(maxsize=MAXSIZE_CACHE)
 def find_approximate_single_end(
     l,
@@ -266,7 +267,7 @@ class Splitter:
             else:
                 raise ValueError(f"Axis {self.axis} is not available.")
 
-    def _dev_generate_cutpoints_img_(self, save_path, imread=imread_octa, aux=""):
+    def _dev_generate_cutpoints_img_(self, save_path, imread=imread_tenth, aux=""):
         # generate cutpoints image for development
         if self.cutframe_idx is None:
             raise ValueError("Please provide cutframe index 轴信息.")
