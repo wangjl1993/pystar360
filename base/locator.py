@@ -1,3 +1,4 @@
+from re import X
 import numpy as np
 from copy import deepcopy
 from pathlib import Path
@@ -345,12 +346,26 @@ class Locator:
                     curr_rect, self.test_startline, img_h, img_w, start_minor_axis_fp=0, axis=self.axis
                 )
 
-                _, _, imageWidth, imageHeight = xyxy2left_xywh(proposal_rect_p)
-                new_rectangle["points"] = xyxy_nested(curr_rect_p, proposal_rect_p)
-                new_rectangle["label"] = bbox.label
-
                 # proposal rect image
                 proposal_rect_img = crop_segmented_rect(test_img, proposal_rect_p)
+                new_rectangle["label"] = bbox.label
+                _, _, imageWidth, imageHeight = xyxy2left_xywh(proposal_rect_p)
+                new_rectangle_points = xyxy_nested(curr_rect_p, proposal_rect_p)
+
+                # TODO
+                if imageHeight * imageWidth < 640 * 640:
+                    r = 1
+                elif imageHeight * imageWidth < 1280 * 1280:
+                    r = 0.5
+                elif imageHeight * imageWidth < 2560 * 2560:
+                    r = 0.25
+                else:
+                    r = 0.125
+                proposal_rect_img = resize_img(proposal_rect_img, r)
+                imageHeight, imageWidth = proposal_rect_img.shape
+                new_rectangle_points = [[j[0] * r, [1] * r] for j in new_rectangle_points]
+
+                new_rectangle["points"] = new_rectangle_points
 
                 fname = concat_str(
                     aux,
