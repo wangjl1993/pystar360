@@ -10,7 +10,18 @@ from pystar360.utilities.helper import *
 from pystar360.utilities._logger import d_logger
 
 EPS = 1e-6
-MAXSIZE_CACHE = 32
+MAXSIZE_CACHE = 8
+
+DEFAULT_COVER_RANGE = 2
+DEFAULT_OFFSET = 0
+DEFAULT_SHIFT = 3
+DEFAULT_STEP = 1
+DEFAULT_VAR_THRESHOLD = 1
+DEFAULT_SKIP_NUM = 0
+DEFAULT_CORR_THRES = None
+DEFAULT_MAX_VAR_THRESHOLD = 5000
+
+__all__ = ["find_approximate_single_end", "Splitter"]
 
 
 @functools.lru_cache(maxsize=MAXSIZE_CACHE)
@@ -103,10 +114,10 @@ class Splitter:
         self._cutframe_idx = None
 
     def get_approximate_cutframe_idxes(self):
-        var_threshold = self.params.get("var_threshold", 1)
-        skip_num = self.params.get("skip_num", 0)
-        corr_thres = self.params.get("corr_thres", None)
-        max_var_threshold = self.params.get("max_var_threshold", 5000)
+        var_threshold = self.params.get("var_threshold", DEFAULT_VAR_THRESHOLD)
+        skip_num = self.params.get("skip_num", DEFAULT_SKIP_NUM)
+        corr_thres = self.params.get("corr_thres", DEFAULT_CORR_THRES)
+        max_var_threshold = self.params.get("max_var_threshold", DEFAULT_MAX_VAR_THRESHOLD)
 
         head_appro_idx = find_approximate_single_end(
             self.images_path_list,
@@ -156,10 +167,10 @@ class Splitter:
             raise ValueError("Please provide cutframe index 轴信息.")
         assert len(self.cutframe_idx) == 2
 
-        cover_range = self.params.get("cover_range", 2)
-        offset = self.params.get("offset", 0)
-        shift = self.params.get("shift", 3)
-        step = self.params.get("step", 1)
+        cover_range = self.params.get("cover_range", DEFAULT_COVER_RANGE)
+        offset = self.params.get("offset", DEFAULT_OFFSET)
+        shift = self.params.get("shift", DEFAULT_SHIFT)
+        step = self.params.get("step", DEFAULT_STEP)
 
         # load model
         model = YoloInfer(
@@ -272,10 +283,10 @@ class Splitter:
         if self.cutframe_idx is None:
             raise ValueError("Please provide cutframe index 轴信息.")
 
-        cover_range = self.params.get("cover_range", 2)
-        offset = self.params.get("offset", 0)
-        shift = self.params.get("shift", 3)
-        step = self.params.get("step", 1)
+        cover_range = self.params.get("cover_range", DEFAULT_COVER_RANGE)
+        offset = self.params.get("offset", DEFAULT_OFFSET)
+        shift = self.params.get("shift", DEFAULT_SHIFT)
+        step = self.params.get("step", DEFAULT_STEP)
 
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)

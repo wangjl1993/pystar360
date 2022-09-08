@@ -1,12 +1,14 @@
 import numpy as np
 from copy import deepcopy
 from pathlib import Path
-from pystar360.utilities.fileManger import write_json, LABELME_TEMPLATE, LABELME_RECT_TEMPLATE
 from pystar360.base.dataStruct import BBox
+from pystar360.utilities.fileManger import write_json, LABELME_TEMPLATE, LABELME_RECT_TEMPLATE
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2, select_best_yolobox
 from pystar360.utilities.helper import *
 
 from pystar360.utilities._logger import d_logger
+
+__all__ = ["Locator"]
 
 
 def cal_coord_by_ratio_adjustment(points, temp_startline, temp_carspan, test_startline, test_carspan, axis=1):
@@ -63,16 +65,12 @@ def trans_coords_from_chunk2frame(chunk_rect: list, item_rect: list):
 
 class Locator:
     def __init__(self, qtrain_info, local_params, device, axis=1, logger=None, debug=False, mac_password=None):
-
         # query information
         self.qtrain_info = qtrain_info
-
         # local params
         self.local_params = local_params
-
         # device
         self.device = device
-
         # axis
         self.axis = axis
         # if axis == 0, vertical, main_axis = y(index=1) in [x, y], minor_axis = x(index=0)
@@ -316,7 +314,6 @@ class Locator:
         save_path.mkdir(parents=True, exist_ok=True)
 
         d_logger.info(">>> Start cropping...")
-        # anchor_bboxes = json2bbox_formater(self.itemInfo["anchors"])
         for idx, bbox in enumerate(anchor_bboxes):
             if bbox.name in label_list or len(label_list) == 0:
                 new_template = deepcopy(LABELME_TEMPLATE)
@@ -355,7 +352,7 @@ class Locator:
                 # proposal rect image
                 proposal_rect_img = crop_segmented_rect(test_img, proposal_rect_p)
 
-                fname = "{}_{}_{}_{}_{}_{}_{}_{}".format(
+                fname = concat_str(
                     aux,
                     self.qtrain_info.minor_train_code,
                     self.qtrain_info.train_num,

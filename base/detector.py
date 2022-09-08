@@ -4,7 +4,7 @@ from pystar360.base.dataStruct import bboxes_collector
 from pystar360.algo.algoBase import NullDetection
 from pystar360.utilities._logger import d_logger
 
-# 所有的检测方程都需要import, 为了能成功eval func 如 from xxx_algos import *
+__all__ = ["Detector"]
 
 
 class Detector:
@@ -89,7 +89,7 @@ class Detector:
 
         return new_item_bboxes
 
-    def _dev_item_null_detection_(self, item_bboxes, *args):
+    def _dev_item_null_detection_(self, item_bboxes, *args, **kwargs):
         if not item_bboxes:
             return []
 

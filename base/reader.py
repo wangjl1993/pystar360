@@ -6,8 +6,9 @@ from pathlib import Path
 from pystar360.utilities.helper import get_img_size, imread_full
 from pystar360.utilities._logger import d_logger
 
+MAXSIZE_CACHE = 8
+
 __all__ = ["ImReader"]
-MAXSIZE_CACHE = 16
 
 
 class ImReaderABC(metaclass=ABCMeta):
