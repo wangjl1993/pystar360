@@ -363,7 +363,7 @@ class Locator:
                     r = 0.125
                 proposal_rect_img = resize_img(proposal_rect_img, r)
                 imageHeight, imageWidth = proposal_rect_img.shape
-                new_rectangle_points = [[j[0] * r, [1] * r] for j in new_rectangle_points]
+                new_rectangle_points = [[j[0] * r, j[1] * r] for j in new_rectangle_points]
 
                 new_rectangle["points"] = new_rectangle_points
 
