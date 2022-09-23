@@ -1,10 +1,12 @@
-import cv2
+from PIL import Image
 import numpy as np
 import torch
 import torchvision.models as models
+from torchvision import transforms
 
 from functools import lru_cache
-
+from typing import Union
+from omegaconf import OmegaConf, DictConfig
 @lru_cache(maxsize=32, typed=False) # 添加lru缓存机制
 class ClsInfer:
     def __init__(self, model_type, model_params, model_path, device, logger=None):
@@ -21,30 +23,41 @@ class ClsInfer:
             model = getattr(models, self.model_type)(**self.model_params)
         except ValueError:
             if self.logger:
-                self.logger.error(f"Please provide a a valid model name {self.model_type}")
-            raise ValueError(f"Please provide a a valid model name {self.model_type}")
+                self.logger.error(f"Please provide a valid model name {self.model_type}")
+            raise ValueError(f"Please provide a valid model name {self.model_type}")
 
         with open(self.model_path, "rb")as f:
             checkpoint = torch.load(f, map_location=self.device)
-        model.load_state_dict(checkpoint["state_dict"], strict=False)
+        model.load_state_dict(checkpoint, strict=False)
 
         model.to(self.device)
         self.model = model.eval()
 
     @torch.no_grad()
-    def infer_by_cls(self, img):
-        """inference by a given classfication model"""
-        # img = cv2.resize(img, (img_size, img_size))
-        # img = get_img_array(img)
-        # img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
-        # img = np.ascontiguousarray(img)
+    def infer_by_cls(self, img: Union[np.ndarray, Image.Image], transform_funs: Union[dict, DictConfig]):
+        """inference by a given classfication model."""
+        
         if isinstance(img, np.ndarray):
-            img = torch.from_numpy(img).to(self.device)
-        else:
-            img = img.to(self.device)
-        img = img.float()
-        if img.ndimension() == 3:
-            img = img.unsqueeze(0)
+            img = Image.fromarray(img).convert("RGB")
+        
+        if isinstance(transform_funs, DictConfig):
+            transform_funs = OmegaConf.to_container(transform_funs)
+        funs = []
+        for f, params in transform_funs.items():
+            if isinstance(params, dict):
+                fun = getattr(transforms, f)(**params)
+            elif isinstance(params, list):
+                fun = getattr(transforms, f)(*params)
+            elif params is None:
+                fun = getattr(transforms, f)()
+            else:
+                if self.logger:
+                    self.logger.error(f"transform_funs's params must be in [dict, list, None].")
+                raise TypeError("transform_funs's params must be in [dict, list, None].")
+            funs.append(fun)
+        
+        funs = transforms.Compose(funs)
+        img = funs(img).unsqueeze(0).to(self.device)
             
         outputs = self.model(img)
         _, predicted = torch.max(outputs.data, 1)
