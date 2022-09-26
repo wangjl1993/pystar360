@@ -9,13 +9,15 @@ from typing import Union
 from omegaconf import OmegaConf, DictConfig
 @lru_cache(maxsize=32, typed=False) # 添加lru缓存机制
 class ClsInfer:
-    def __init__(self, model_type, model_params, model_path, device, logger=None):
+    def __init__(self, model_type, model_params, model_path, device, transform_funs_params: Union[dict, DictConfig], logger=None):
         self.model_type = model_type
         self.model_params = model_params
         self.model_path = model_path
         self.device = device
         self.logger = logger
+        self.transform_funs_params = transform_funs_params
         self._initialize()
+        self._init_transform_funs()
 
     @torch.no_grad()
     def _initialize(self):
@@ -33,17 +35,11 @@ class ClsInfer:
         model.to(self.device)
         self.model = model.eval()
 
-    @torch.no_grad()
-    def infer_by_cls(self, img: Union[np.ndarray, Image.Image], transform_funs: Union[dict, DictConfig]):
-        """inference by a given classfication model."""
-        
-        if isinstance(img, np.ndarray):
-            img = Image.fromarray(img).convert("RGB")
-        
-        if isinstance(transform_funs, DictConfig):
-            transform_funs = OmegaConf.to_container(transform_funs)
-        funs = []
-        for f, params in transform_funs.items():
+    def _init_transform_funs(self,):
+        if isinstance(self.transform_funs_params, DictConfig):
+            self.transform_funs_params = OmegaConf.to_container(self.transform_funs_params)
+        transform_funs = []
+        for f, params in self.transform_funs_params.items():
             if isinstance(params, dict):
                 fun = getattr(transforms, f)(**params)
             elif isinstance(params, list):
@@ -54,11 +50,18 @@ class ClsInfer:
                 if self.logger:
                     self.logger.error(f"transform_funs's params must be in [dict, list, None].")
                 raise TypeError("transform_funs's params must be in [dict, list, None].")
-            funs.append(fun)
+            transform_funs.append(fun)
         
-        funs = transforms.Compose(funs)
-        img = funs(img).unsqueeze(0).to(self.device)
-            
+        self.transform_funs = transforms.Compose(transform_funs)
+
+    @torch.no_grad()
+    def infer_by_cls(self, img: Union[np.ndarray, Image.Image]):
+        """inference by a given classfication model."""
+        
+        if isinstance(img, np.ndarray):
+            img = Image.fromarray(img).convert("RGB")
+        
+        img = self.transform_funs(img).unsqueeze(0).to(self.device)
         outputs = self.model(img)
         _, predicted = torch.max(outputs.data, 1)
 
