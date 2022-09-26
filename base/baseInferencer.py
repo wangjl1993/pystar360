@@ -9,3 +9,7 @@ class BaseInfer(metaclass=ABCMeta):
     @abstractclassmethod
     def infer(self, img):
         raise NotImplementedError
+
+    @staticmethod
+    def parse_model():
+        pass
