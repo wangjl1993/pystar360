@@ -7,14 +7,19 @@ from torchvision import transforms
 from functools import lru_cache
 from typing import Union
 from omegaconf import OmegaConf, DictConfig
-@lru_cache(maxsize=32, typed=False) # 添加lru缓存机制
-class ClsInfer:
-    def __init__(self, model_type, model_params, model_path, device, logger=None):
+
+from pystar360.base.baseInferencer import BaseInfer
+
+
+@lru_cache(maxsize=8, typed=False)  # 添加lru缓存机制
+class ClsInfer(BaseInfer):
+    def __init__(self, model_type, model_params, model_path, device, logger=None, mac_password=None):
         self.model_type = model_type
         self.model_params = model_params
         self.model_path = model_path
         self.device = device
         self.logger = logger
+        self.mac_password = mac_password
         self._initialize()
 
     @torch.no_grad()
@@ -26,20 +31,15 @@ class ClsInfer:
                 self.logger.error(f"Please provide a valid model name {self.model_type}")
             raise ValueError(f"Please provide a valid model name {self.model_type}")
 
-        with open(self.model_path, "rb")as f:
+        with open(self.model_path, "rb") as f:
             checkpoint = torch.load(f, map_location=self.device)
         model.load_state_dict(checkpoint, strict=False)
 
         model.to(self.device)
         self.model = model.eval()
 
-    @torch.no_grad()
-    def infer_by_cls(self, img: Union[np.ndarray, Image.Image], transform_funs: Union[dict, DictConfig]):
-        """inference by a given classfication model."""
-        
-        if isinstance(img, np.ndarray):
-            img = Image.fromarray(img).convert("RGB")
-        
+    def get_transform_funs(self, transform_funs: Union[dict, DictConfig]):
+
         if isinstance(transform_funs, DictConfig):
             transform_funs = OmegaConf.to_container(transform_funs)
         funs = []
@@ -55,17 +55,23 @@ class ClsInfer:
                     self.logger.error(f"transform_funs's params must be in [dict, list, None].")
                 raise TypeError("transform_funs's params must be in [dict, list, None].")
             funs.append(fun)
-        
-        funs = transforms.Compose(funs)
-        img = funs(img).unsqueeze(0).to(self.device)
-            
+
+        self.transform_funs = transforms.Compose(funs)
+
+    @torch.no_grad()
+    def infer(self, img: Union[np.ndarray, Image.Image]):
+        """inference by a given classfication model."""
+
+        if isinstance(img, np.ndarray):
+            img = Image.fromarray(img).convert("RGB")
+
+        img = self.transform_funs(img).unsqueeze(0).to(self.device)
+
         outputs = self.model(img)
         _, predicted = torch.max(outputs.data, 1)
 
-        if self.logger:
-            self.logger.debug(outputs.data)
-
         return predicted.item()
+
 
 # @torch.no_grad()
 # def initialize_cls(model_type, params, path, device):
@@ -98,5 +104,3 @@ class ClsInfer:
 #     """normalize before put data into model"""
 #     img = np.float32(img) / 127.5 - 1
 #     return img
-
-
