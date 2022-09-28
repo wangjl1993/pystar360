@@ -3,7 +3,7 @@ import functools
 from abc import ABCMeta, abstractclassmethod
 from pathlib import Path
 
-from pystar360.utilities.helper import get_img_size, imread_full
+from pystar360.utilities.helper import get_img_size, imread_full, read_segmented_img
 from pystar360.utilities._logger import d_logger
 
 MAXSIZE_CACHE = 8
@@ -91,3 +91,9 @@ class ImReader(ImReaderABC):
         filter_rule1 = lambda l: [p for p in l if p.stem.split("-")[0] == self.channel]
         filter_rules.append(filter_rule1)
         return filter_rules
+
+    def read_multi_image(self, startline, endline, axis, imread=imread_full):
+        return read_segmented_img(self._image_path_list, startline, endline, imread, axis=axis)
+
+    def read_single_image(self, idx, imread):
+        return imread(self._image_path_list[idx])
