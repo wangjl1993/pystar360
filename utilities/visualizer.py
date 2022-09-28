@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pystar360.utilities._threading import threadingDecorator
+from pystar360.utilities.misc import threadingDecorator
 from pystar360.utilities.helper import *
 
 
