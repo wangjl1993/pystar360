@@ -7,9 +7,5 @@ class BaseInfer(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractclassmethod
-    def infer(self, img):
+    def infer(self, img, *args, **kwargs):
         raise NotImplementedError
-
-    @staticmethod
-    def parse_model():
-        pass
