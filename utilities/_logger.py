@@ -39,4 +39,5 @@ def get_logger(log_name, save_path=None, l_level=logging.DEBUG, do_simple=False)
     return d_logger
 
 
+# 这个是开发模式下的使用的logger，用于debug/development
 d_logger = get_logger("DEVLOPMENT_MODE")
