@@ -213,7 +213,7 @@ class Splitter:
                     if save_path:
                         fname = (
                             save_path
-                            / f"{self.qtrain_info.train_sn}_{self.qtrain_info.minor_train_code}_{self.qtrain_info.channel}_{self.car}_{p}_{i}.jpg"
+                            / f"{self.qtrain_info.train_sn}_{self.qtrain_info.minor_train_code}_{self.qtrain_info.channel}_{self.qtrain_info.car}_{p}_{i}.jpg"
                         )
                         cv2.imwrite(str(fname), img)
 
