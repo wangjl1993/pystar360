@@ -256,49 +256,9 @@ class Locator:
                 temp_pt0 = max(bbox.temp_rect[0][self.main_axis], self.temp_startline)
                 temp_pt1 = min(bbox.temp_rect[1][self.main_axis], self.temp_endline)
                 if first_ref <= temp_pt0 <= second_ref:
-                    # bbox.proposal_rect[0] = cal_new_pts(
-                    #     pt0,
-                    #     bbox.temp_rect[0],
-                    #     first_ref,
-                    #     ref_segl,
-                    #     first_cur,
-                    #     cur_segl,
-                    #     self.main_axis,
-                    #     self.minor_axis_poly_func,
-                    # )
-                    # bbox.curr_rect[0] = cal_new_pts(
-                    #     pt0,
-                    #     bbox.orig_rect[0],
-                    #     first_ref,
-                    #     ref_segl,
-                    #     first_cur,
-                    #     cur_segl,
-                    #     self.main_axis,
-                    #     self.minor_axis_poly_func,
-                    # )
                     bbox.curr_rect[0] = cal_new_pts_partial(orig_pt0, bbox.orig_rect[0])
                     bbox.proposal_rect[0] = cal_new_pts_partial(temp_pt0, bbox.temp_rect[0])
                 if first_ref <= temp_pt1 <= second_ref:
-                    # bbox.proposal_rect[1] = cal_new_pts(
-                    #     pt1,
-                    #     bbox.temp_rect[1],
-                    #     first_ref,
-                    #     ref_segl,
-                    #     first_cur,
-                    #     cur_segl,
-                    #     self.main_axis,
-                    #     self.minor_axis_poly_func,
-                    # )
-                    # bbox.curr_rect[1] = cal_new_pts(
-                    #     pt1,
-                    #     bbox.orig_rect[1],
-                    #     first_ref,
-                    #     ref_segl,
-                    #     first_cur,
-                    #     cur_segl,
-                    #     self.main_axis,
-                    #     self.minor_axis_poly_func,
-                    # )
                     bbox.curr_rect[1] = cal_new_pts_partial(orig_pt1, bbox.orig_rect[1])
                     bbox.proposal_rect[1] = cal_new_pts_partial(temp_pt1, bbox.temp_rect[1])
 
