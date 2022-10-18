@@ -1,5 +1,5 @@
-from re import X
 import numpy as np
+from functools import partial
 from copy import deepcopy
 from pathlib import Path
 from pystar360.base.dataStruct import BBox
@@ -233,56 +233,74 @@ class Locator:
             first_cur = curr_anchor_points[i]
             second_cur = curr_anchor_points[i + 1]
 
+            # segmentation length
             ref_segl = second_ref - first_ref
             cur_segl = second_cur - first_cur
+
+            # partial function
+            cal_new_pts_partial = partial(
+                cal_new_pts,
+                first_ref=first_ref,
+                ref_segl=ref_segl,
+                first_cur=first_cur,
+                cur_segl=cur_segl,
+                main_axis=self.main_axis,
+                minor_axis_poly_func=self.minor_axis_poly_func,
+            )
 
             # for each template interval, calculate the ratio difference
             # rescale the current interval
             for _, bbox in enumerate(bboxes):
-                pt0 = max(bbox.temp_rect[0][self.main_axis], self.temp_startline)
-                pt1 = min(bbox.temp_rect[1][self.main_axis], self.temp_endline)
-                if first_ref <= pt0 <= second_ref:
-                    bbox.proposal_rect[0] = cal_new_pts(
-                        pt0,
-                        bbox.temp_rect[0],
-                        first_ref,
-                        ref_segl,
-                        first_cur,
-                        cur_segl,
-                        self.main_axis,
-                        self.minor_axis_poly_func,
-                    )
-                    bbox.curr_rect[0] = cal_new_pts(
-                        pt0,
-                        bbox.orig_rect[0],
-                        first_ref,
-                        ref_segl,
-                        first_cur,
-                        cur_segl,
-                        self.main_axis,
-                        self.minor_axis_poly_func,
-                    )
-                if first_ref <= pt1 <= second_ref:
-                    bbox.proposal_rect[1] = cal_new_pts(
-                        pt1,
-                        bbox.temp_rect[1],
-                        first_ref,
-                        ref_segl,
-                        first_cur,
-                        cur_segl,
-                        self.main_axis,
-                        self.minor_axis_poly_func,
-                    )
-                    bbox.curr_rect[1] = cal_new_pts(
-                        pt1,
-                        bbox.orig_rect[1],
-                        first_ref,
-                        ref_segl,
-                        first_cur,
-                        cur_segl,
-                        self.main_axis,
-                        self.minor_axis_poly_func,
-                    )
+                orig_pt0 = max(bbox.orig_rect[0][self.main_axis], self.temp_startline)
+                orig_pt1 = min(bbox.orig_rect[1][self.main_axis], self.temp_endline)
+                temp_pt0 = max(bbox.temp_rect[0][self.main_axis], self.temp_startline)
+                temp_pt1 = min(bbox.temp_rect[1][self.main_axis], self.temp_endline)
+                if first_ref <= temp_pt0 <= second_ref:
+                    # bbox.proposal_rect[0] = cal_new_pts(
+                    #     pt0,
+                    #     bbox.temp_rect[0],
+                    #     first_ref,
+                    #     ref_segl,
+                    #     first_cur,
+                    #     cur_segl,
+                    #     self.main_axis,
+                    #     self.minor_axis_poly_func,
+                    # )
+                    # bbox.curr_rect[0] = cal_new_pts(
+                    #     pt0,
+                    #     bbox.orig_rect[0],
+                    #     first_ref,
+                    #     ref_segl,
+                    #     first_cur,
+                    #     cur_segl,
+                    #     self.main_axis,
+                    #     self.minor_axis_poly_func,
+                    # )
+                    bbox.curr_rect[0] = cal_new_pts_partial(orig_pt0, bbox.orig_rect[0])
+                    bbox.proposal_rect[0] = cal_new_pts_partial(temp_pt0, bbox.temp_rect[0])
+                if first_ref <= temp_pt1 <= second_ref:
+                    # bbox.proposal_rect[1] = cal_new_pts(
+                    #     pt1,
+                    #     bbox.temp_rect[1],
+                    #     first_ref,
+                    #     ref_segl,
+                    #     first_cur,
+                    #     cur_segl,
+                    #     self.main_axis,
+                    #     self.minor_axis_poly_func,
+                    # )
+                    # bbox.curr_rect[1] = cal_new_pts(
+                    #     pt1,
+                    #     bbox.orig_rect[1],
+                    #     first_ref,
+                    #     ref_segl,
+                    #     first_cur,
+                    #     cur_segl,
+                    #     self.main_axis,
+                    #     self.minor_axis_poly_func,
+                    # )
+                    bbox.curr_rect[1] = cal_new_pts_partial(orig_pt1, bbox.orig_rect[1])
+                    bbox.proposal_rect[1] = cal_new_pts_partial(temp_pt1, bbox.temp_rect[1])
 
         return bboxes
 
