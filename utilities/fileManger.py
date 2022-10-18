@@ -22,7 +22,7 @@ LABELME_RECT_TEMPLATE = {"label": "", "points": [], "group_id": None, "shape_typ
 
 
 def sort_files_in_numeric_order(l):
-    """Sort fiels in number order"""
+    """Sort fiels in numeric order"""
     return sorted(l, key=lambda x: (int(re.sub("\D", "", x)), x))
 
 
