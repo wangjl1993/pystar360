@@ -24,7 +24,15 @@ class ImReaderABC(metaclass=ABCMeta):
 @functools.lru_cache(maxsize=MAXSIZE_CACHE)
 class ImReader(ImReaderABC):
     def __init__(
-        self, images_path, channel, filter_ext=(".jpg"), check_files=True, logger=None, debug=False, verbose=False
+        self,
+        images_path,
+        channel,
+        filter_ext=(".jpg"),
+        check_files=True,
+        logger=None,
+        debug=False,
+        verbose=False,
+        client="HITO",
     ):
 
         self.images_path = images_path
@@ -33,6 +41,8 @@ class ImReader(ImReaderABC):
         self.check_files = check_files
         self.logger = logger
         self.debug = debug
+        self.verbose = verbose
+        self.client = client.upper()
 
         self.filter_rules = self._get_filters()
         self._image_path_list = []
@@ -87,9 +97,13 @@ class ImReader(ImReaderABC):
             raise FileNotFoundError(f">>> File missing in {str(self.images_path)}!")
 
     def _get_filters(self):
+        # 根据客户选择合适的图片过滤方式
         filter_rules = []
-        filter_rule1 = lambda l: [p for p in l if p.stem.split("-")[0] == self.channel]
-        filter_rules.append(filter_rule1)
+        if self.client == "HUAXING":
+            filter_rule = lambda l: [p for p in l if p.stem.split("-")[0] == self.channel]
+            filter_rules.append(filter_rule)
+        else:
+            pass
         return filter_rules
 
     def read_multi_image(self, startline, endline, axis, imread=imread_full):
