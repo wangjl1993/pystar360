@@ -120,33 +120,53 @@ class Rect(List):
 @dataclass_json
 @dataclass
 class BBox:
-    label: str = (
-        ""  # xxx#2 比如xxls=3 就是name=‘xxls’，num2check=3，至少需要检查3个xxls；或xxls 就是name=‘xxls’，num2check（default=1，默认至少检测1个
-    )
-    index: int = 0  # order, 在这辆车，从左到右，或者从上到下，第几个这样的item
-    name: str = ""  # xxx item name label的名字
-    num2check: int = 1  # # number of item to check # 需要检测的个数
-    _orig_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)  # optional， 原目标物多大
-    _temp_rect: Union[Rect, List, Tuple] = field(
-        default_factory=Rect
-    )  # rect position in template, 检测框（映射直接用的框）; 比如用yolo的话，就需要把orig_rect扩大一定大小；不需要的话，就是目标物框
-    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)  # proposal rect position，初步映射到测试图的框，
-    _curr_rect: Union[Rect, List, Tuple] = field(
-        default_factory=Rect
-    )  # rect position in current train 如果有进一步检测，返回yolo精确框；不需要的话，等于proposal_rect
-    _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)  # if needed, 预留历史图的框，一般不需要，optional
-    conf_score: float = 0.0  # confidence level 无论什么方法，计算出来的置信度
-    conf_thres: float = 0.0  # confidence threshold 置信度的评判阈值是多少
-    is_defect: int = 0  # if it is defect, 0 is ok, 1 is ng 是否故障
-    # optional
-    value: Union[float, List] = 0.0  # for a measurement method 如果使用度量方法，测试的数值是多少
-    value_thres: float = 0.0  # 度量的阈值是多少
-    unit: str = ""  # unit, like mm, cm if needed  # 单位是多少
-    defect_type: int = 0  # defect type if needed # 故障类型是什么，预留
-    description: str = ""  # defect description # 故障说明，可以写或者不写 预留
+    # xxx#2 比如xxls=3 就是name=‘xxls’，num2check=3，至少需要检查3个xxls；或xxls 就是name=‘xxls’，num2check（default=1，默认至少检测1个
+    label: str = ""
+    # order, 在这辆车，从左到右，或者从上到下，第几个这样的item
+    index: int = 0
+    # xxx item name label的名字
+    name: str = ""
+    # number of item to check # 需要检测的个数
+    num2check: int = 1
+    # 目标物多大 目标物品的bounding box(2d)
+    _orig_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # rect position in template, 检测框（映射直接用的框）; 比如用yolo的话，就需要把orig_rect扩大一定大小变成temp_rect；不需要的话，就是目标物框(2d)
+    _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # proposal rect position，初步映射到测试图的框(2d)
+    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # rect position in current train 如果有进一步检测，返回yolo精确框；不需要的话，等于proposal_rect (2d)
+    _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # proposal rect position, 如果3d图像单独定位，就直接用 proposal_rect, 如果3d定位是从2d配准得到的就是用porposal rect 3d
+    _proposal_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # 3d 目标的bounding bbox
+    _curr_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # optional 预留，# if needed, 预留历史图的框，一般不需要，optional
+    _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # confidence level 无论什么方法，计算出来的置信度，信心程度
+    conf_score: float = 0.0
+    # confidence threshold 置信度的评判阈值是多少
+    conf_thres: float = 0.0
+    # if it is defect, 0 is ok, 1 is ng 是否故障
+    is_defect: int = 0
+    # defect description # 故障说明，可以写或者不写
+    description: str = ""
+    #############
+    # for a measurement method 如果使用度量方法，测试的数值是多少
+    value: Union[float, List] = 0.0
+    # 度量的阈值是多少 optional
+    value_thres: float = 0.0
+    # unit, like mm, cm if needed 单位是什么
+    unit: str = ""
+    # defect type if needed # 故障类型是什么，预留设计
+    defect_type: int = 0
+    # 3d 是否出现故障
     is_3ddefect: int = 0
+    # 3d 深度数值
     value_3d: float = 0.0
+    # 3d 深度阈值
     value_3dthres: Union[float, List] = 0.0
+
+    # 是否使用算法检测过
     is_detected: int = 0  # 是否被算法检查过
 
     def __post_init__(self):
@@ -175,6 +195,22 @@ class BBox:
     @proposal_rect.setter
     def proposal_rect(self, value):
         self._proposal_rect = Rect(*value)
+
+    @property
+    def proposal_rect3d(self):
+        return self._proposal_rect3d
+
+    @proposal_rect3d.setter
+    def proposal_rect3d(self, value):
+        self._proposal_rect3d = Rect(*value)
+
+    @property
+    def curr_rect3d(self):
+        return self._curr_rect3d
+
+    @curr_rect3d.setter
+    def curr_rect3d(self, value):
+        self._curr_rect3d = Rect(*value)
 
     @property
     def orig_rect(self):
@@ -250,5 +286,6 @@ class QTrainInfo:
     carriage: int = 0  # 1-8 or 1-16
     test_train: CarriageInfo = field(default_factory=CarriageInfo)
     hist_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)
+    temp_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)
     direction: Optional[int] = 0
     Pantograph_state: int = 0
