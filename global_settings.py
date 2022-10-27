@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Union, Optional
 
 # basic settings
-CLIENT = "HITO"
 MODULE_NAME = Path(__file__).parent.name
 DEV: bool = False  # if it's in development mode
 VIZ: bool = False  # visualize output
@@ -24,3 +23,11 @@ MAC_PASSWORD: Optional[str] = get_mac_password(do_decrpt=False)
 from pystar360.utilities.misc import print_product_info
 
 print_product_info()
+
+# constant
+# 不同客户可能有不同的版本
+# HUAXING 华兴
+# ZHUDAO 主导
+# HITO 海拓
+CLIENT = "HITO"
+SUFFIX_3D = "3D"
