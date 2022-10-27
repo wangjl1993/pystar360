@@ -12,6 +12,11 @@ from pystar360.utilities._logger import d_logger
 __all__ = ["Locator"]
 
 
+DEFAULT_MINOR_AXIS_AFFINE_MATRIX = None
+DEFAULT_AUTO_MINOR_AXIS_ADJUST = True
+DEFAULT_POLY_ORDER = 1
+
+
 def cal_coord_by_ratio_adjustment(points, temp_startline, temp_carspan, test_startline, test_carspan, axis=1):
     if axis == 1:  # horizontal
         pts1 = [(points[0][0] - temp_startline) / temp_carspan * test_carspan + test_startline, points[0][1]]
@@ -28,13 +33,33 @@ def cal_coord_by_ratio_adjustment(points, temp_startline, temp_carspan, test_sta
     return new_points
 
 
-def cal_new_pts(pt, temp_pts, first_ref, ref_segl, first_cur, cur_segl, main_axis, minor_axis_poly_func):
+def cal_new_pt_in_main_axis(pt, first_ref, ref_segl, first_cur, cur_segl):
     new_pt = (pt - first_ref) / ref_segl * cur_segl + first_cur
+    return new_pt
+
+
+def cal_new_pt_in_minor_axis(pt, minor_axis_poly_func):
+    new_pt = min(max(minor_axis_poly_func(pt), 0), 1)
+    return new_pt
+
+
+def cal_new_pts(pt, temp_pts, first_ref, ref_segl, first_cur, cur_segl, main_axis, minor_axis_poly_func):
+    new_pt = cal_new_pt_in_main_axis(pt, first_ref, ref_segl, first_cur, cur_segl)
+
     points = temp_pts
     if main_axis == 1:
-        proposal_pts = [min(max(minor_axis_poly_func(points[0]), 0), 1), new_pt]
+        proposal_pts = [cal_new_pt_in_minor_axis(points[0], minor_axis_poly_func), new_pt]
     else:
-        proposal_pts = [new_pt, min(max(minor_axis_poly_func(points[1]), 0), 1)]
+        proposal_pts = [new_pt, cal_new_pt_in_minor_axis(points[1], minor_axis_poly_func)]
+    return proposal_pts
+
+
+def cal_new_pts_only_minor(temp_pts, main_axis, minor_axis_poly_func):
+    points = temp_pts
+    if main_axis == 1:
+        proposal_pts = [cal_new_pt_in_minor_axis(points[0], minor_axis_poly_func), points[1]]
+    else:
+        proposal_pts = [points[0], cal_new_pt_in_minor_axis(points[1], minor_axis_poly_func)]
     return proposal_pts
 
 
@@ -85,12 +110,13 @@ class Locator:
         self.mac_password = mac_password
 
     def update_test_traininfo(self, test_startline, test_endline):
+        # test train information
         self.test_startline = test_startline
         self.test_endline = test_endline
         self.test_carspan = abs(self.test_endline - self.test_startline)
 
     def update_temp_traininfo(self, temp_startline, temp_endline):
-        # template information
+        # template(reference) train information
         self.temp_startline = temp_startline
         self.temp_endline = temp_endline
         self.temp_carspan = abs(self.temp_endline - self.temp_startline)
@@ -166,7 +192,11 @@ class Locator:
         minor_axis_poly_func = np.poly1d(z)
         return minor_axis_poly_func
 
-    def get_affine_transformation(self, anchor_bboxes):
+    def get_affine_transformation(self, anchor_bboxes=[]):
+
+        minor_axis_affine_matrix = self.local_params.get("minor_axis_affine_matrix", DEFAULT_MINOR_AXIS_AFFINE_MATRIX)
+        auto_minor_axis_adjust = self.local_params.get("auto_minor_axis_adjust", DEFAULT_AUTO_MINOR_AXIS_ADJUST)
+        poly_order = self.local_params.get("poly_order", DEFAULT_POLY_ORDER)
         # if not anchor boxes provided
         if len(anchor_bboxes) < 1:
             # process main axis, add startline point and endline point, number of segments (+ 2 - 1 = + 1)
@@ -174,10 +204,8 @@ class Locator:
             self.curr_anchor_points = [self.test_startline, self.test_endline]
 
             # calculate minor axis shift using ax + b = y
-            if self.local_params.minor_axis_affine_maxtrix:
-                self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(
-                    self.local_params.minor_axis_affine_maxtrix
-                )
+            if minor_axis_affine_matrix:
+                self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(minor_axis_affine_matrix)
             else:
                 # y = 1*x + 0
                 self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix([1, 0])
@@ -195,14 +223,14 @@ class Locator:
             self.curr_anchor_points = sorted(self.curr_anchor_points, key=lambda a: a[self.main_axis])
 
             # calculate minor axis shift using ax + b = y
-            if self.local_params.minor_axis_affine_maxtrix:
-                self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(
-                    self.local_params.minor_axis_affine_maxtrix
-                )
-            elif self.local_params.auto_minor_axis_adjust:
+            if minor_axis_affine_matrix:
+                self.minor_axis_poly_func = self._update_minor_axis_affine_transform_matrix(minor_axis_affine_matrix)
+            elif auto_minor_axis_adjust:
                 variable_x = [pt[self.minor_axis] for pt in self.temp_anchor_points]
                 variable_y = [pt[self.minor_axis] for pt in self.curr_anchor_points]
-                self.minor_axis_poly_func = self._auto_update_minor_axis_affine_transform_matrix(variable_x, variable_y)
+                self.minor_axis_poly_func = self._auto_update_minor_axis_affine_transform_matrix(
+                    variable_x, variable_y, poly_order=poly_order
+                )
             else:
                 raise NotImplementedError
 
@@ -261,6 +289,22 @@ class Locator:
                 if first_ref <= temp_pt1 <= second_ref:
                     bbox.curr_rect[1] = cal_new_pts_partial(orig_pt1, bbox.orig_rect[1])
                     bbox.proposal_rect[1] = cal_new_pts_partial(temp_pt1, bbox.temp_rect[1])
+
+        return bboxes
+
+    def locate_bboxes_in_minor_direction_for_depth(self, bboxes):
+        if not bboxes:
+            return []
+
+        for _, bbox in enumerate(bboxes):
+            bbox.curr_rect3d[0] = cal_new_pts_only_minor(bbox.curr_rect[0], self.main_axis, self.minor_axis_poly_func)
+            bbox.curr_rect3d[1] = cal_new_pts_only_minor(bbox.curr_rect[1], self.main_axis, self.minor_axis_poly_func)
+            bbox.proposal_rect3d[0] = cal_new_pts_only_minor(
+                bbox.proposal_rect[0], self.main_axis, self.minor_axis_poly_func
+            )
+            bbox.proposal_rect3d[1] = cal_new_pts_only_minor(
+                bbox.proposal_rect[1], self.main_axis, self.minor_axis_poly_func
+            )
 
         return bboxes
 
