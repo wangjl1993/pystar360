@@ -265,6 +265,9 @@ class Locator:
             ref_segl = second_ref - first_ref
             cur_segl = second_cur - first_cur
 
+            if ref_segl == 0 or cur_segl == 0:
+                continue
+
             # partial function
             cal_new_pts_partial = partial(
                 cal_new_pts,
