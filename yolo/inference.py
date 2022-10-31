@@ -4,6 +4,7 @@ from functools import lru_cache
 
 import numpy as np
 import torch
+from pystar360.base.baseInferencer import BaseInfer
 from pystar360.yolo.models.experimental import attempt_load
 from pystar360.yolo.utils.augmentations import letterbox
 from pystar360.yolo.utils.general import check_img_size, non_max_suppression, scale_coords, xyxy2xywh
@@ -12,6 +13,8 @@ from pystar360.utilities.de import decrpt_content_from_filepath
 
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())
+
+MAXSIZE_CACHE = 16
 
 
 def yolo_xywh2xyxy(points, sx, sy, ref_h, ref_w):
@@ -77,8 +80,8 @@ def convert_img(img0, imgsz, stride):
     return img
 
 
-@lru_cache(maxsize=32, typed=False)  # 添加lru缓存机制
-class YoloInfer:
+@lru_cache(maxsize=MAXSIZE_CACHE, typed=False)  # 添加lru缓存机制
+class YoloInfer(BaseInfer):
     def __init__(self, model_path, device, imgsz=640, logger=None, mac_password=None):
         self.model_path = model_path
         self.device = device
@@ -87,6 +90,7 @@ class YoloInfer:
         self.mac_password = mac_password
         self._initialize()
 
+    @torch.no_grad()
     def _initialize(self):
         if self.mac_password:
             fp = Path(self.model_path)

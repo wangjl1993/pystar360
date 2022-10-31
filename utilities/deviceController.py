@@ -2,6 +2,18 @@
 import os
 import time
 import torch
+import random
+import numpy as np
+
+
+def init_seeds(seed=4):
+    # Initialize random number generator (RNG) seeds https://pytorch.org/docs/stable/notes/randomness.html
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # for Multi-GPU, exception safe
+
 
 # import pynvml as p
 def time_sync():
