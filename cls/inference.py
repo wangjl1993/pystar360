@@ -21,7 +21,6 @@ class ClsInfer(BaseInfer):
         self.logger = logger
         self.mac_password = mac_password
         self._initialize()
-        self._init_transform_funs()
 
     @torch.no_grad()
     def _initialize(self):
