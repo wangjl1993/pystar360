@@ -34,7 +34,7 @@ def plt_bboxes_on_img(
     use_3drect=False,
 ):
     if not bboxes:
-        return
+        return img
 
     img = resize_img(img, resize_ratio)
     if len(img.shape) == 2:
