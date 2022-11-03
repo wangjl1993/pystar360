@@ -31,7 +31,7 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             flip_ud: False # 是否上下翻转
     """
 
-    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
+    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs):
         # if empty, return empty
         if not item_bboxes_list:
             return []
@@ -89,5 +89,5 @@ class DetectForeignObjectWholeImage(algoBaseABC):
 
 @algoDecorator
 class DetectForeignObjectAfterSeg(algoBaseABC):
-    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
+    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs):
         raise NotImplementedError
