@@ -143,8 +143,8 @@ def read_segmented_img(l, startline, endline, imread, imgsz=None, axis=1):
 
 def xyxy2xywh(points):
     """left-top right-bottom rect points to center xy width height rect points"""
-    h = points[1][1] - points[0][1]
-    w = points[1][0] - points[0][0]
+    h = abs(points[1][1] - points[0][1])
+    w = abs(points[1][0] - points[0][0])
     x = 0.5 * (points[1][0] + points[0][0])
     y = 0.5 * (points[1][1] + points[0][1])
     return x, y, w, h
