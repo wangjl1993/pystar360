@@ -29,7 +29,7 @@ class DetectItemsMissing(algoBaseABC):
         label_translator: {0: 'xxxx'}
     """
 
-    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w):
+    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs):
         # if empty, return empty
         if not item_bboxes_list:
             return []

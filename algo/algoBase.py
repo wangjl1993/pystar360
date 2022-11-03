@@ -36,6 +36,9 @@ class algoBaseABC:
         for key, item in kwargs.items():
             setattr(self, key, item)
 
+    def __call__(self, *args, **kwargs):
+        pass
+
 
 @algoDecorator
 class NullDetection(algoBaseABC):
