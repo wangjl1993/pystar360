@@ -48,6 +48,12 @@ class pyStar360RobotBase:
 
     def run3d(self, *args, **kwargs):
         raise NotImplementedError
+
+    def run2d_hist(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def run3d_hist(self, *args, **kwargs):
+        raise NotImplementedError
     
     @TryExcept()
     def run(self):
@@ -154,7 +160,7 @@ class CropToolDev:
 
         save_path = Path(save_path)
         for bbox in bboxes:
-            if bbox.name in target_item_list:
+            if bbox.name in target_item_list or len(target_item_list) == 0:
                 curr_rect_p = frame2rect(eval(f"bbox.{rect_type}"), startline, img_h, img_w, start_minor_axis_fp=0, axis=axis)
                 curr_rect_img = crop_segmented_rect(img, curr_rect_p)
                 
