@@ -1,6 +1,5 @@
-import torch
 import math
-import numpy as np
+import torch
 
 # IOU
 # def cal_iou(bbox, prebox):
@@ -23,17 +22,17 @@ import numpy as np
 #     iou = inter_area / (bbox_area + prebox_area - inter_area + 1e-6)  # 计算交并比
 #     return iou
 def cal_iou(bboxes1, bboxes2):
-    bboxes1 = np.array(bboxes1, dtype=np.float32)
-    bboxes2 = np.array(bboxes2, dtype=np.float32)
+    bboxes1 = torch.tensor(bboxes1, dtype=torch.float32)
+    bboxes2 = torch.tensor(bboxes2, dtype=torch.float32)
     rows = bboxes1.shape[0]
     cols = bboxes2.shape[0]
-    ious = torch.zeros((rows, cols), dtype=np.float32)
+    ious = torch.zeros((rows, cols), dtype=torch.float32)
     if rows * cols == 0:
         return ious
     exchange = False
     if bboxes1.shape[0] > bboxes2.shape[0]:
         bboxes1, bboxes2 = bboxes2, bboxes1
-        ious = np.zeros((cols, rows), dtype=np.float32)
+        ious = torch.zeros((cols, rows), dtype=torch.float32)
         exchange = True
 
     w1 = bboxes1[:, 2] - bboxes1[:, 0]
@@ -85,17 +84,17 @@ def cal_iou(bboxes1, bboxes2):
 #     giou = iou - (area_C - area_U) / area_C
 #     return giou
 def cal_giou(bboxes1, bboxes2):
-    bboxes1 = np.array(bboxes1, dtype=np.float32)
-    bboxes2 = np.array(bboxes2, dtype=np.float32)
+    bboxes1 = torch.tensor(bboxes1, dtype=torch.float32)
+    bboxes2 = torch.tensor(bboxes2, dtype=torch.float32)
     rows = bboxes1.shape[0]
     cols = bboxes2.shape[0]
-    gious = torch.zeros((rows, cols), dtype=np.float32)
+    gious = torch.zeros((rows, cols), dtype=torch.float32)
     if rows * cols == 0:
         return gious
     exchange = False
     if bboxes1.shape[0] > bboxes2.shape[0]:
         bboxes1, bboxes2 = bboxes2, bboxes1
-        gious = np.zeros((cols, rows), dtype=np.float32)
+        gious = torch.zeros((cols, rows), dtype=torch.float32)
         exchange = True
 
     w1 = bboxes1[:, 2] - bboxes1[:, 0]
@@ -129,17 +128,17 @@ def cal_giou(bboxes1, bboxes2):
 
 # DIOU
 def cal_diou(bboxes1, bboxes2):
-    bboxes1 = np.array(bboxes1, dtype=np.float32)
-    bboxes2 = np.array(bboxes2, dtype=np.float32)
+    bboxes1 = torch.tensor(bboxes1, dtype=torch.float32)
+    bboxes2 = torch.tensor(bboxes2, dtype=torch.float32)
     rows = bboxes1.shape[0]
     cols = bboxes2.shape[0]
-    dious = torch.zeros((rows, cols), dtype=np.float32)
+    dious = torch.zeros((rows, cols), dtype=torch.float32)
     if rows * cols == 0:  #
         return dious
     exchange = False
     if bboxes1.shape[0] > bboxes2.shape[0]:
         bboxes1, bboxes2 = bboxes2, bboxes1
-        dious = torch.zeros((cols, rows), dtype=np.float32)
+        dious = torch.zeros((cols, rows), dtype=torch.float32)
         exchange = True
     # xmin,ymin,xmax,ymax->[:,0],[:,1],[:,2],[:,3]
     w1 = bboxes1[:, 2] - bboxes1[:, 0]
@@ -175,17 +174,17 @@ def cal_diou(bboxes1, bboxes2):
 
 # CIOU
 def cal_ciou(bboxes1, bboxes2):
-    bboxes1 = np.array(bboxes1, dtype=np.float32)
-    bboxes2 = np.array(bboxes2, dtype=np.float32)
+    bboxes1 = torch.tensor(bboxes1, dtype=torch.float32)
+    bboxes2 = torch.tensor(bboxes2, dtype=torch.float32)
     rows = bboxes1.shape[0]
     cols = bboxes2.shape[0]
-    cious = torch.zeros((rows, cols), dtype=np.float32)
+    cious = torch.zeros((rows, cols), dtype=torch.float32)
     if rows * cols == 0:
         return cious
     exchange = False
     if bboxes1.shape[0] > bboxes2.shape[0]:
         bboxes1, bboxes2 = bboxes2, bboxes1
-        cious = torch.zeros((cols, rows), dtype=np.float32)
+        cious = torch.zeros((cols, rows), dtype=torch.float32)
         exchange = True
 
     w1 = bboxes1[:, 2] - bboxes1[:, 0]
@@ -226,3 +225,13 @@ def cal_ciou(bboxes1, bboxes2):
     if exchange:
         cious = cious.T
     return cious
+
+
+if __name__ == "__main__":
+    bboxes1 = [[1, 1, 4, 4]]
+    bboxes2 = [[2, 2, 3, 3]]
+
+    print(cal_iou(bboxes1, bboxes2))
+    print(cal_giou(bboxes1, bboxes2))
+    print(cal_diou(bboxes1, bboxes2))
+    print(cal_ciou(bboxes1, bboxes2))
