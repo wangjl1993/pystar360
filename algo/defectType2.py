@@ -31,22 +31,37 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             flip_ud: False # 是否上下翻转
     """
 
+    MB_PATH = None
+    BB_MODLE_PATH = None
+    CONFIG_PATH = "./pystar360/ano/lib1/models/pat/config.yaml"
+    IMAGE_SIZE = 256
+    CONF_THRES = 0.5
+    FLIP_LR = False
+    FLIP_UD = False
+
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs):
         # if empty, return empty
         if not item_bboxes_list:
             return []
 
+        mb_path = self.item_params.get("memory_bank_path", self.MB_PATH)
+        bb_model_path = self.item_params.get("backbone_model_path", self.BB_MODLE_PATH)
+        config_path = self.item_params.get("config_path", self.CONFIG_PATH)
+        image_size = self.item_params.get("image_size", self.IMAGE_SIZE)
+        conf_thres = self.item_params.get("conf_thres", self.CONF_THRES)
+        flip_lr = self.item_params.get("flip_lr", self.FLIP_LR)
+        flip_ud = self.item_params.get("flip_ud", self.FLIP_UD)
+
         # initialize model
         model = PatchCoreInfer(
-            self.item_params["memory_bank_path"],
-            self.item_params["backbone_model_path"],
-            self.item_params["config_path"],
+            mb_path,
+            bb_model_path,
+            config_path,
             self.device,
-            image_size=self.item_params["image_size"],
+            image_size=image_size,
             logger=self.logger,
             mac_password=self.mac_password,
         )
-        conf_thres = self.item_params["conf_thres"]
 
         # iterate
         new_item_bboxes_list = []
@@ -60,9 +75,9 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             img = crop_segmented_rect(test_img, proposal_rect_p)
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
-            if self.item_params.get("flip_lr", False):
+            if flip_lr:
                 img = np.flip(img, axis=1)
-            elif self.item_params.get("flip_ud", False):
+            elif flip_ud:
                 img = np.flip(img, axis=0)
 
             # infer
@@ -88,6 +103,8 @@ class DetectForeignObjectWholeImage(algoBaseABC):
 
 
 @algoDecorator
-class DetectForeignObjectAfterSeg(algoBaseABC):
+class DetectForeignObjectSS(algoBaseABC):
+    """检测是否异常，异物/破损都可以使用, 分割后再用seg，常常使用在背景会非常负责，容易导致误报的情况"""
+
     def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs):
         raise NotImplementedError
