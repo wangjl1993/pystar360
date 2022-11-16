@@ -192,7 +192,7 @@ class Locator:
         minor_axis_poly_func = np.poly1d(z)
         return minor_axis_poly_func
 
-    def get_affine_transformation(self, anchor_bboxes=[]):
+    def get_affine_transformation(self, anchor_bboxes):
 
         minor_axis_affine_matrix = self.local_params.get("minor_axis_affine_matrix", DEFAULT_MINOR_AXIS_AFFINE_MATRIX)
         auto_minor_axis_adjust = self.local_params.get("auto_minor_axis_adjust", DEFAULT_AUTO_MINOR_AXIS_ADJUST)
