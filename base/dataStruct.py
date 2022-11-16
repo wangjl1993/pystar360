@@ -178,7 +178,10 @@ class BBox:
 
     @temp_rect.setter
     def temp_rect(self, value):
-        self._temp_rect = Rect(*value)
+        if isinstance(value, Rect):
+            self._temp_rect = value
+        else:
+            self._temp_rect = Rect(*value)
 
     @property
     def curr_rect(self):
@@ -186,7 +189,10 @@ class BBox:
 
     @curr_rect.setter
     def curr_rect(self, value):
-        self._curr_rect = Rect(*value)
+        if isinstance(value, Rect):
+            self._curr_rect = value
+        else:
+            self._curr_rect = Rect(*value)
 
     @property
     def proposal_rect(self):
@@ -194,7 +200,10 @@ class BBox:
 
     @proposal_rect.setter
     def proposal_rect(self, value):
-        self._proposal_rect = Rect(*value)
+        if isinstance(value, Rect):
+            self._proposal_rect = value
+        else:
+            self._proposal_rect = Rect(*value)
 
     @property
     def proposal_rect3d(self):
@@ -202,7 +211,10 @@ class BBox:
 
     @proposal_rect3d.setter
     def proposal_rect3d(self, value):
-        self._proposal_rect3d = Rect(*value)
+        if isinstance(value, Rect):
+            self._proposal_rect3d = value
+        else:
+            self._proposal_rect3d = Rect(*value)
 
     @property
     def curr_rect3d(self):
@@ -210,7 +222,10 @@ class BBox:
 
     @curr_rect3d.setter
     def curr_rect3d(self, value):
-        self._curr_rect3d = Rect(*value)
+        if isinstance(value, Rect):
+            self._curr_rect3d = value
+        else:
+            self._curr_rect3d = Rect(*value)
 
     @property
     def orig_rect(self):
@@ -218,7 +233,10 @@ class BBox:
 
     @orig_rect.setter
     def orig_rect(self, value):
-        self._orig_rect = Rect(*value)
+        if isinstance(value, Rect):
+            self._orig_rect = value
+        else:
+            self._orig_rect = Rect(*value)
 
     @property
     def hist_rect(self):
@@ -226,7 +244,10 @@ class BBox:
 
     @hist_rect.setter
     def hist_rect(self, value):
-        self._hist_rect = Rect(*value)
+        if isinstance(value, Rect):
+            self._hist_rect = value
+        else:
+            self._hist_rect = Rect(*value)
 
     def __validate(self):
         for f in fields(self):
