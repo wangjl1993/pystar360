@@ -1,10 +1,12 @@
 
+import cv2
 from pathlib import Path
 from pystar360.base.dataStruct import json2bbox_formater
 from pystar360.utilities.fileManger import write_json, read_json
 from pystar360.utilities.deviceController import get_torch_device, get_environ_info
 from pystar360.utilities.helper import (concat_str, read_segmented_img, imread_full, crop_segmented_rect,
     imread_tenth, imread_quarter, frame2rect)
+from pystar360.utilities.misc import TryExcept
 from pystar360.utilities._logger import d_logger
 
 import pystar360.global_settings as SETTINGS
@@ -41,6 +43,19 @@ class pyStar360RobotBase:
     #     self.detector = Detector(self.qtrain_info, self.item_params, self.itemInfo, self.device,
     #                             axis=self.channel_params.axis, logger=self.logger)
 
+    def run2d(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def run3d(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def run2d_hist(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def run3d_hist(self, *args, **kwargs):
+        raise NotImplementedError
+    
+    @TryExcept()
     def run(self):
         raise NotImplementedError
 
@@ -130,6 +145,43 @@ class pyStar360RobotBase:
         fname = concat_str(self.qtrain_info.channel, self.qtrain_info.carriage)
         fname = save_path / (fname + ".json")
         write_json(fname, json_dict)
+
+
+class CropToolDev:
+    """开发阶段使用的生成，或者截图工具汇总"""
+    def __init__(self):
+        pass
+    
+    @staticmethod
+    def _dev_generate_items(save_path, img,bboxes, startline, img_h, img_w, axis, qtrain_info, 
+                        target_item_list=[], rect_type="proposal_rect"):
+        if not bboxes:
+            return 
+
+        save_path = Path(save_path)
+        for bbox in bboxes:
+            if bbox.name in target_item_list or len(target_item_list) == 0:
+                curr_rect_p = frame2rect(eval(f"bbox.{rect_type}"), startline, img_h, img_w, start_minor_axis_fp=0, axis=axis)
+                curr_rect_img = crop_segmented_rect(img, curr_rect_p)
+                
+                fname = concat_str(qtrain_info.minor_train_code, qtrain_info.train_num, qtrain_info.train_sn,
+                        qtrain_info.channel, qtrain_info.carriage, bbox.name, bbox.index)
+                img_path = save_path / (fname + ".jpg")
+                cv2.imwrite(str(img_path), curr_rect_img)
+                print(f">>> {fname}")
+
+    # @staticmethod
+    # def _dev_generate_cutpoints(save_path, splitter, qtrain_info, cutframe_idxes=None, imread=imread_tenth):
+    #     if cutframe_idxes is not None:
+    #         splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
+    #     else:
+    #         cutframe_idxes = splitter.get_approximate_cutframe_idxes()
+    #         # update cutframe idx
+    #         splitter.update_cutframe_idx(cutframe_idxes[qtrain_info.carriage-1], 
+    #                     cutframe_idxes[qtrain_info.carriage])
+
+    #     splitter._dev_generate_cutpoints_img_(save_path, imread=imread)
+
 
 
 

@@ -22,7 +22,7 @@ class Detector:
         self.debug = debug
         self.mac_password = mac_password
 
-    def detect_items(self, item_bboxes, test_img, test_startline, img_w, img_h):
+    def detect_items(self, item_bboxes, test_img, test_startline, img_w, img_h, **kwargs):
         if not item_bboxes:
             return []
         item_bboxes_dict = bboxes_collector(item_bboxes)
@@ -78,9 +78,14 @@ class Detector:
                 item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
 
             # run func
-            local_item_bboxes = func(item_bboxes_list, test_img, test_startline, img_h, img_w)
-
-            new_item_bboxes.extend(local_item_bboxes)
+            try:
+                local_item_bboxes = func(item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs)
+                new_item_bboxes.extend(local_item_bboxes)
+            except Exception as e:
+                if self.logger:
+                    self.logger.info(str(e))
+                else:
+                    d_logger.info(str(e))
 
         if self.logger:
             self.logger.info(f">>> Finished detection...")
