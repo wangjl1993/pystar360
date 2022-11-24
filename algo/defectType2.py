@@ -77,7 +77,7 @@ class DetectForeignObjectWholeImage(algoBaseABC):
 
             if flip_lr:
                 img = np.flip(img, axis=1)
-            elif flip_ud:
+            if flip_ud:
                 img = np.flip(img, axis=0)
 
             # infer
