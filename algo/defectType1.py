@@ -91,7 +91,7 @@ class DetectItemsMissing(algoBaseABC):
                 # only check num，do not need to return every single detected item's location
                 box.index = count
                 box.curr_rect = proposal_rect_f
-                box.conf_score = outputs[0][0]  # get the max conf
+                box.conf_score = outputs[0][-1]  # get the max conf
                 if actual_num < num2check:
                     box.is_defect = 1  # defect
 
@@ -106,7 +106,7 @@ class DetectItemsMissing(algoBaseABC):
                     new_box = copy.deepcopy(box)
                     new_box.index = count
                     new_box.curr_rect = yolo_xywh2xyxy_v2(outputs[i][1:5], proposal_rect_f)
-                    new_box.conf_score = outputs[i][0]
+                    new_box.conf_score = outputs[i][-1]
 
                     # update list
                     new_item_bboxes_list.append(new_box)
