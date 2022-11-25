@@ -86,7 +86,7 @@ class DetectItemsMissing(algoBaseABC):
                 continue
 
             only_check_num = self.item_params.get("item_check_num", False)
-            outputs = sorted(outputs, key=lambda x: x[0])
+            outputs = sorted(outputs, key=lambda x: x[-1])
             if only_check_num:
                 # only check num，do not need to return every single detected item's location
                 box.index = count
