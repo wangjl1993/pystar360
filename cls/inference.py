@@ -3,12 +3,13 @@ import numpy as np
 import torch
 import torchvision.models as models
 from torchvision import transforms
-
+from pathlib import Path
 from functools import lru_cache
 from typing import Union
 from omegaconf import OmegaConf, DictConfig
 
 from pystar360.base.baseInferencer import BaseInfer
+from pystar360.utilities.de import decrpt_content_from_filepath
 
 
 @lru_cache(maxsize=8, typed=False)  # 添加lru缓存机制
@@ -31,8 +32,14 @@ class ClsInfer(BaseInfer):
                 self.logger.error(f"Please provide a valid model name {self.model_type}")
             raise ValueError(f"Please provide a valid model name {self.model_type}")
 
-        with open(self.model_path, "rb") as f:
-            checkpoint = torch.load(f, map_location=self.device)
+        if self.mac_password:
+            self.model_path = Path(self.model_path)
+            self.model_path = self.model_path.with_suffix(".pystar")
+        
+        checkpoint = torch.load(
+            f=decrpt_content_from_filepath(self.model_path, self.mac_password), 
+            map_location=self.device
+        )
         model.load_state_dict(checkpoint, strict=False)
 
         model.to(self.device)

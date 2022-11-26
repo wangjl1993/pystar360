@@ -93,14 +93,12 @@ class YoloInfer(BaseInfer):
     @torch.no_grad()
     def _initialize(self):
         if self.mac_password:
-            fp = Path(self.model_path)
-            if fp.suffix != ".pystar":
-                fname = fp.name + ".pystar"
-                fp = fp.parent / fname
-            content = decrpt_content_from_filepath(fp, self.mac_password)
-            self.model = attempt_load(content, device=self.device)
-        else:
-            self.model = attempt_load(self.model_path, device=self.device)  # load FP32 model
+            self.model_path = Path(self.model_path)
+            self.model_path = self.model_path.with_suffix(".pystar")
+        self.model = attempt_load(
+            weights=decrpt_content_from_filepath(self.model_path, self.mac_password), 
+            device=self.device
+        )  # load FP32 model
         self.stride = int(self.model.stride.max())  # model stride
         self.imgsz = check_img_size(self.imgsz, s=self.stride)  # check image size
 

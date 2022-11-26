@@ -48,33 +48,23 @@ def write_json(path, dict, lock=False, mode="w"):
     print(f">>> Generate {path}...")
 
 
-def read_json(fp, mode="rb", key=None, encrp_exts=".pystar"):
+def read_json(fp, key=None, encrp_exts=".pystar"):
     """Read json"""
     fp = Path(fp)
     if key:
-        # if key provided, it means that we should try decrpt files
-        if fp.suffix != encrp_exts:
-            fname = fp.name + ".pystar"
-            fp = fp.parent / fname
-        content = decrpt_content_from_filepath(fp, key, encrp_exts=encrp_exts)
-        load_dict = json.load(content)
-    else:
-        with open(fp, mode) as f:
-            load_dict = json.load(f)
+        fp = fp.with_suffix(encrp_exts)
+    content = decrpt_content_from_filepath(fp, key, encrp_exts=encrp_exts)
+    load_dict = json.load(content)
     return load_dict
 
 
 def read_yaml(fp, key=None, encrp_exts=".pystar"):
+    """Read yaml"""
     fp = Path(fp)
     if key:
-        # if key provided, it means that we should try decrpt files
-        if fp.suffix != encrp_exts:
-            fname = fp.name + ".pystar"
-            fp = fp.parent / fname
-        content = decrpt_content_from_filepath(fp, key, encrp_exts=encrp_exts)
-        load_dict = OmegaConf.load(content)
-    else:
-        load_dict = OmegaConf.load(str(fp))
+        fp = fp.with_suffix(encrp_exts)
+    content = decrpt_content_from_filepath(fp, key, encrp_exts=encrp_exts)
+    load_dict = OmegaConf.load(content)
     return load_dict
 
 
