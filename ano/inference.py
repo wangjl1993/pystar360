@@ -29,21 +29,17 @@ class PatchCoreInfer:
     @torch.no_grad()
     def _initialize(self):
 
-        config = get_configurable_parameters(config_path=self.config_path, 
-                    image_size=self.image_size)
+        config = get_configurable_parameters(
+            config_path=self.config_path, 
+            image_size=self.image_size
+        )
     
-        # Get the inferencer
-        extension = Path(self.memory_bank_path).suffix
-        self.model: Inferencer
-        if extension in (".ckpt", ".pth"):
-            module = import_module("pystar360.ano.lib1.deploy.inferencers.torch")
-            TorchInferencer = getattr(module, "TorchInferencer")  # pylint: disable=invalid-name
-            self.model = TorchInferencer(config=config, device=self.device, model_source=self.memory_bank_path,
-            model_backbone_path=self.backbone_model_path, meta_data_path=None)
-        else:
-            raise ValueError(
-                f"Model extension is not supported. Torch Inferencer exptects a .ckpt file."
-            )
+        module = import_module("pystar360.ano.lib1.deploy.inferencers.torch")
+        TorchInferencer = getattr(module, "TorchInferencer")  # pylint: disable=invalid-name
+        self.model = TorchInferencer(
+            config=config, device=self.device, model_source=self.memory_bank_path,
+            model_backbone_path=self.backbone_model_path, meta_data_path=None, mac_password=self.mac_password
+        )
 
     @torch.no_grad()
     def infer(self, image, thres=0.5, return_mask=False):

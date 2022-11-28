@@ -49,12 +49,13 @@ def get_mac_password(do_decrpt: bool = False):
 def decrpt_content_from_filepath(filepath, key, encrp_exts=".pystar"):
     filepath = Path(filepath)
 
-    content = ""
+    
     # check file exits and ensure that it's a file
     if filepath.exists() and filepath.is_file():
         # read binary data from file
         with open(str(filepath), "rb") as f:
             encrypted_data = f.read()
+            content = encrypted_data
 
         # if its extention is .pystar, decrpt
         if filepath.suffix == encrp_exts:
@@ -67,3 +68,19 @@ def decrpt_content_from_filepath(filepath, key, encrp_exts=".pystar"):
     else:
         raise FileNotFoundError(f">>> {filepath} not found.")
     return content
+
+
+def encrypt_files(root:str, mac_code: str):
+    md5_sum = base64.urlsafe_b64encode(_generate_model_secret(mac_code))
+    root = Path(root)
+
+    for file in root.iterdir():
+        if file.is_file():
+            with file.open("rb") as f:
+                pth_bytes = f.read()
+            encrypted_data = base64.urlsafe_b64decode(Fernet(md5_sum).encrypt(pth_bytes))
+            py_star_f = file.with_suffix(".pystar")  
+
+            with open(py_star_f, 'wb') as fw:
+                print(f"write {py_star_f}")
+                fw.write(encrypted_data)
