@@ -65,7 +65,7 @@ def check_requirements(requirements=(), exclude=()):
 
 def threadingDecorator(func):
     def wrap_func(*args, **kwargs):
-        th = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=True)
+        th = threading.Thread(target=func, args=args, kwargs=kwargs, daemon=False)
         th.start()
         return
 
