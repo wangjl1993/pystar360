@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # start code
+import re
 import cv2
 import numpy as np
 
@@ -43,13 +44,20 @@ def split_str(mystr, separator="="):
 
 
 def get_label_num2check(mystr, separator="="):
-    output = split_str(mystr, separator)
-    if len(output) == 1:
-        return output[0], 1
-    elif len(output) == 2:
-        return output[0], int(output[1])
+    if separator not in mystr:
+        return mystr, 1
     else:
-        raise ValueError(f"Please provide a valid label. {mystr} vs {output}")
+        p = r'(?<=\=)\s*\d*[1-9]*'
+        num2check = re.findall(p, mystr)
+        if len(num2check) > 1:
+            raise ValueError(f"Plase provide a valid label name {mystr}")
+        if len(num2check[0]) == 0:
+            num2check = 1
+        else:
+            num2check = int(num2check[0])
+        p = r'=\s*\d*[1-9]*'
+        new_str = re.sub(p, "", mystr)
+        return new_str, num2check
 
 
 def frame2index(frame, length):
