@@ -50,10 +50,11 @@ class TorchInferencer(Inferencer):
         model_source: Union[str, Path, AnomalyModule],
         model_backbone_path: Union[str, Path],
         meta_data_path: Union[str, Path] = None,
-        mac_password: bytes = None
+        mac_password: bytes = None,
     ):
         self.config = config
         self.mac_password = mac_password
+        self.device = device
         if isinstance(model_source, AnomalyModule):
             self.model = model_source
         else:
@@ -72,6 +73,7 @@ class TorchInferencer(Inferencer):
             Dict: Dictionary containing the meta_data.
         """
         from pystar360.ano.lib1.deploy.optimize import get_model_metadata
+
         meta_data: Union[DictConfig, Dict[str, Union[float, Tensor, np.ndarray]]]
         if path is None:
             meta_data = get_model_metadata(self.model)
@@ -79,7 +81,9 @@ class TorchInferencer(Inferencer):
             meta_data = super()._load_meta_data(path)
         return meta_data
 
-    def load_model(self, main_model_path: Union[str, Path], model_backbone_path: Union[str, Path], device) -> AnomalyModule:
+    def load_model(
+        self, main_model_path: Union[str, Path], model_backbone_path: Union[str, Path], device
+    ) -> AnomalyModule:
         """Load the PyTorch model.
 
         Args:
@@ -89,17 +93,12 @@ class TorchInferencer(Inferencer):
             (AnomalyModule): PyTorch Lightning model.
         """
         model = get_model(self.config)
+        model.to(device)
         if self.mac_password:
             main_model_path = Path(main_model_path).with_suffix(".pystar")
             model_backbone_path = Path(model_backbone_path).with_suffix(".pystar")
-        dict1 = torch.load(
-            f=decrpt_content_from_filepath(main_model_path, self.mac_password), 
-            map_location=device
-        )
-        dict2 = torch.load(
-            f=decrpt_content_from_filepath(model_backbone_path, self.mac_password), 
-            map_location=device
-        )
+        dict1 = torch.load(f=decrpt_content_from_filepath(main_model_path, self.mac_password), map_location=device)
+        dict2 = torch.load(f=decrpt_content_from_filepath(model_backbone_path, self.mac_password), map_location=device)
         dict1.update(dict2)
         dict1 = dict(dict1)
         model.load_state_dict(dict1)
@@ -122,6 +121,8 @@ class TorchInferencer(Inferencer):
 
         if len(processed_image) == 3:
             processed_image = processed_image.unsqueeze(0)
+
+        processed_image = processed_image.to(self.device)
 
         return processed_image
 
