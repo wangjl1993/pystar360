@@ -10,10 +10,11 @@ from sympy import O
 from pystar360.algo.algoBase import algoBaseABC, algoDecorator
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect
-
+from pystar360.utilities.helper3d import depthImg2pcd
 # from pystar360.utilities.helper3d import
 from pystar360.utilities._logger import d_logger
-
+import open3d as o3d
+from typing import Tuple
 
 @algoDecorator
 class DetectNutLoose3d_v1(algoBaseABC):
@@ -205,3 +206,127 @@ class DetectBoltLoose3d(algoBaseABC):
 
     def __call__(self):
         pass
+
+def get_fpfh_feat(pcd: o3d.geometry.PointCloud, voxel_size: int) -> Tuple[o3d.geometry.PointCloud, o3d.pipelines.registration.Feature]:
+    radius_normal = voxel_size * 3
+    pcd.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=radius_normal, max_nn=50))
+    radius_feature = voxel_size * 6
+    pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
+        pcd, 
+        o3d.geometry.KDTreeSearchParamHybrid(radius=radius_feature, max_nn=100)
+    )
+    
+    return pcd, pcd_fpfh
+
+def execute_fast_global_registration(
+        src_pcd: o3d.geometry.PointCloud, tar_pcd: o3d.geometry.PointCloud, src_fpfh: o3d.pipelines.registration.Feature,
+        tar_fpfh: o3d.pipelines.registration.Feature, voxel_size: int
+    ) -> o3d.pipelines.registration.RegistrationResult:
+    distance_threshold = voxel_size * 0.5
+
+    result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
+        src_pcd, tar_pcd, src_fpfh, tar_fpfh,
+        o3d.pipelines.registration.FastGlobalRegistrationOption(maximum_correspondence_distance=distance_threshold)
+    )
+    return result
+
+
+@algoDecorator
+class DetectLoose3dByAlign(algoBaseABC):
+    """
+    根据点云匹配程度(点云配准后重叠的点云对比例), 判断检测螺帽/螺帽松动
+    本流程通过2d流程定位，curr_rect映射到curr_rect3d 直接映射到3点图像，所以不需要yolo，其中图片裁剪框用的是curr_rect3d
+
+    depth_items:
+        "label_name":
+            module: "pystar360.algo.defectType4"
+            func: "DetectLoose3dByAlign"
+            params:
+                ratio_thres: 0.08 # 配准重合比例
+                dist_range: [2, 10] # 配准后的点云对距离在范围内，认为该点重合
+    """
+    PCD_NUM = 10000 # process down_sampling if PCD_NUM > 10000; 
+    ICP_MAX_CORR_DIST = 1.0 
+    CAMERA_MATRIX = [              # Camera calibration matrix
+        [2155.9, 0, 1077.9], 
+        [0, 1077.9, 797.75], 
+        [0, 0, 1]
+    ]
+    DEPTH_SCALE = 1                # depth2pcd params
+    DEPTH_TRUNC = 1000
+    VOXEL_SIZE = 0.5
+    DIST_RANGE = [2, 10]
+    
+    def __call__(self, item_bboxes_list, test_img, test_startline, hist_img, hist_startline, img_h, img_w, **kwargs):
+        # if empty, return empty
+        if not item_bboxes_list:
+            return []
+        
+        ratio_thres = self.item_params['ratio_thres']
+        min_dist_thres, max_dist_thres = self.item_params.get('dist_range', self.DIST_RANGE)
+        icp_max_corr_dist = self.item_params.get('icp_max_corr_dist', self.ICP_MAX_CORR_DIST)
+        voxel_size = self.item_params.get('voxel_size', self.VOXEL_SIZE)
+        depth_scale = self.item_params.get('depth_scale', self.DEPTH_SCALE)
+        depth_trunc = self.item_params.get('depth_trunc', self.DEPTH_TRUNC)
+        camera_matrix = np.array(self.item_params.get('camera_matrix', self.CAMERA_MATRIX))
+
+        new_item_bboxes_list = []
+        for count, box in enumerate(item_bboxes_list):
+
+            # if defect, then skip
+            if box.is_defect:
+                box.description = f">>> It has been defected. Skip depth detection"
+                box.is_detected = 1
+                box.index = count + 1
+                new_item_bboxes_list.append(box)
+                break
+
+            # get item depth image: '.data' format
+            curr_rect, hist_rect = box.curr_rect3d, box.hist_rect3d
+            curr_rect, hist_rect = frame2rect(curr_rect, test_startline, img_h, img_w, axis=self.axis), frame2rect(hist_rect, hist_startline, img_h, img_w, axis=self.axis)
+            curr_data, hist_data = crop_segmented_rect(test_img, curr_rect), crop_segmented_rect(hist_img, hist_rect)
+
+            # depth2pointcloud
+            curr_pcd = depthImg2pcd(curr_data, camera_matrix, depth_scale, depth_trunc)
+            hist_pcd = depthImg2pcd(hist_data, camera_matrix, depth_scale, depth_trunc)
+
+            if len(np.array(curr_pcd.points)) > self.PCD_NUM:
+                curr_pcd = curr_pcd.voxel_down_sample(voxel_size)
+            if len(np.array(hist_pcd.points)) > self.PCD_NUM:
+                hist_pcd = hist_pcd.voxel_down_sample(voxel_size)
+            
+            curr_pcd, curr_fpfh = get_fpfh_feat(curr_pcd, voxel_size)
+            hist_pcd, hist_fpfh = get_fpfh_feat(hist_pcd, voxel_size)
+
+            # coarse and fine registration
+            res_coarse = execute_fast_global_registration(curr_pcd, hist_pcd, curr_fpfh, hist_fpfh, voxel_size)
+            res_fine = o3d.pipelines.registration.registration_icp(
+                curr_pcd, hist_pcd, icp_max_corr_dist, res_coarse.transformation,
+                o3d.pipelines.registration.TransformationEstimationPointToPoint()
+            )
+            
+            curr_pcd.transform(res_fine.transformation)
+
+            curr_pcd_num, hist_pcd_num = len(np.array(curr_pcd.points)), len(np.array(hist_pcd.points))
+            if curr_pcd_num > hist_pcd_num:
+                dists = hist_pcd.compute_point_cloud_distance(curr_pcd)
+            else: 
+                dists = curr_pcd.compute_point_cloud_distance(hist_pcd)
+            dists = np.array(dists)
+
+            if curr_pcd_num < self.PCD_NUM:
+                out_num = ((dists>min_dist_thres)&(dists<max_dist_thres)).sum()
+            else:
+                out_num = ((dists>min_dist_thres*2)&(dists<max_dist_thres)).sum()
+            
+            r = out_num / len(dists)
+            if r > ratio_thres:
+                box.is_3ddefect = 1
+                box.is_defect = 1   
+                box.description = f">>> 3ddefect! score={r}, thres={ratio_thres}"
+            
+            box.is_detected = 1
+            box.index = count + 1
+            new_item_bboxes_list.append(box)
+
+        return new_item_bboxes_list
