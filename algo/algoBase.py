@@ -5,17 +5,13 @@ from pystar360.utilities._logger import d_logger
 class algoDecorator:
     def __init__(self, function, logger=None):
         self.function = function
-        self.logger = logger
+        self.logger = logger if logger else d_logger
 
     def __call__(self, *args, **kwargs):
         t1 = time_sync()
         result = self.function(*args, **kwargs)
         t2 = time_sync()
-        if self.logger:
-            # self.logger.info(f'>>> Function {self.function.__name__!r} executed in {(t2-t1):.4f}s')
-            self.logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
-        else:
-            d_logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
+        self.logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
         return result
 
 
