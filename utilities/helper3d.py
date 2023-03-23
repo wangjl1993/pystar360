@@ -1,4 +1,5 @@
 import os
+import cv2
 import zipfile
 import numpy as np
 import open3d as o3d
@@ -34,6 +35,21 @@ class imread3d_decorator:
 
 imread3d_h2000 = imread3d_decorator(h=2000)
 imread3d_w1000 = imread3d_decorator(w=1000)
+
+
+class imread3d_decorator:
+    def __init__(self):
+        pass
+
+    def __call__(self, p):
+        p = Path(p)
+        if p.suffix != ".data":
+            raise NotImplementedError
+        img = cv2.imread(str(p), cv2.IMREAD_ANYDEPTH)
+        return img
+
+
+imread3d_full = imread3d_decorator()
 
 
 def depth2pts(depth_img, cam_matrix, scale_factor=1, reshape=True):
