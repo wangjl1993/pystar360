@@ -120,7 +120,8 @@ class Rect(List):
 @dataclass_json
 @dataclass
 class BBox:
-    # xxx#2 比如xxls=3 就是name=‘xxls’，num2check=3，至少需要检查3个xxls；或xxls 就是name=‘xxls’，num2check（default=1，默认至少检测1个
+    ############ 基本信息 ############
+    # xxx#2 比如xxls=3 就是name=‘xxls’，num2check=3，至少需要检查3个xxls；或xxls 就是name=‘xxls’，num2check（default=1），默认至少检测1个
     label: str = ""
     # order, 在这辆车，从左到右，或者从上到下，第几个这样的item
     index: int = 0
@@ -128,6 +129,8 @@ class BBox:
     name: str = ""
     # number of item to check # 需要检测的个数
     num2check: int = 1
+
+    ############  ############
     # 目标物多大 目标物品的bounding box(2d)
     _orig_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
     # rect position in template, 检测框（映射直接用的框）; 比如用yolo的话，就需要把orig_rect扩大一定大小变成temp_rect；不需要的话，就是目标物框(2d)
@@ -136,38 +139,48 @@ class BBox:
     _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
     # rect position in current train 如果有进一步检测，返回yolo精确框；不需要的话，等于proposal_rect (2d)
     _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    # proposal rect position, 如果3d图像单独定位，就直接用 proposal_rect, 如果3d定位是从2d配准得到的就是用porposal rect 3d
+    # proposal rect position, 如果3d图像单独定位，就直接用 proposal_rect3d, 如果3d定位是从2d配准得到的就是用porposal rect
     _proposal_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
     # 3d 目标的bounding bbox
     _curr_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    # optional 预留，# if needed, 预留历史图的框，一般不需要，optional
+    # 【optional预留】，# if needed, 预留历史图的框，一般不需要，optional
     _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # 【optional预留】，# if needed, 预留历史图3d的框，一般不需要，optional
+    _hist_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
+
+    ############ 2d图像评价 ############
     # confidence level 无论什么方法，计算出来的置信度，信心程度
     conf_score: float = 0.0
     # confidence threshold 置信度的评判阈值是多少
     conf_thres: float = 0.0
     # if it is defect, 0 is ok, 1 is ng 是否故障
     is_defect: int = 0
+
+    ############ 3d图像评价 ############
+    # 3d 深度数值
+    value_3d: Union[float, List] = 0.0
+    # 3d 深度阈值
+    value_3dthres: Union[float, List] = 0.0
     # defect description # 故障说明，可以写或者不写
     description: str = ""
-    #############
-    # for a measurement method 如果使用度量方法，测试的数值是多少
+    # 3d 是否出现故障
+    is_3ddefect: int = 0
+
+    ############ 测量值评价 ############
+    # for a measurement method 如果使用度量方法，测试的数值是多少【像素】
     value: Union[float, List] = 0.0
     # 度量的阈值是多少 optional
     value_thres: float = 0.0
-    # unit, like mm, cm if needed 单位是什么
+    # unit, like mm, cm if needed 单位是什么 【预留 TODO】
     unit: str = ""
-    # defect type if needed # 故障类型是什么，预留设计
-    defect_type: int = 0
-    # 3d 是否出现故障
-    is_3ddefect: int = 0
-    # 3d 深度数值
-    value_3d: float = 0.0
-    # 3d 深度阈值
-    value_3dthres: Union[float, List] = 0.0
 
+    ############ 其他 ############
+    # defect type if needed # 故障类型是什么，预留设计 TODO
+    defect_type: int = 0
     # 是否使用算法检测过
     is_detected: int = 0  # 是否被算法检查过
+    # 使用多少次算法
+    algo_cnt: int = 0
 
     def __post_init__(self):
         self.__validate()
@@ -249,6 +262,17 @@ class BBox:
         else:
             self._hist_rect = Rect(*value)
 
+    @property
+    def hist_rect3d(self):
+        return self._hist_rect
+
+    @hist_rect3d.setter
+    def hist_rect3d(self, value):
+        if isinstance(value, Rect):
+            self._hist_rect3d = value
+        else:
+            self._hist_rect = Rect(*value)
+
     def __validate(self):
         for f in fields(self):
             if f.name in ("temp_rect", "curr_rect", "proposal_rect", "orig_rect", "hist_rect"):
@@ -289,24 +313,26 @@ def bboxes_collector(bboxes):
 @dataclass_json
 @dataclass
 class CarriageInfo:
-    path: str = ""
-    startline: float = 0.0
-    endline: float = 0.0
-    first_axis_idx: int = 0
-    second_axis_idx: int = 0
+    path: str = ""  # 图像文件地址
+    startline: float = 0.0  # 车体起始位置
+    endline: float = 0.0  # 车体结束位置
+    path3d: str = ""  # 深度图像文件地址，通常和2d图像文件地址一致
 
 
 @dataclass_json
 @dataclass
 class QTrainInfo:
-    major_train_code: str = ""  # CRH1A
-    minor_train_code: str = ""  # CRH1A-A
-    train_num: str = ""  # 1178, CRH1A-A 1178
-    train_sn: str = ""  # 2101300005, date or uid
-    channel: str = ""  # 12,4,17...
-    carriage: int = 0  # 1-8 or 1-16
-    test_train: CarriageInfo = field(default_factory=CarriageInfo)
-    hist_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)
-    temp_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)
-    direction: Optional[int] = 0
-    Pantograph_state: int = 0
+    major_train_code: str = ""  # 型号 CRH1A
+    minor_train_code: str = ""  # 子型号 CRH1A-A
+    train_num: str = ""  # 车号 1178, CRH1A-A 1178
+    train_sn: str = ""  # 运行编号 2101300005, date or uid
+    channel: str = ""  # 相机通道 12,4,17...
+    carriage: int = 0  # 辆位 1-8 or 1-16
+    test_train: CarriageInfo = field(default_factory=CarriageInfo)  # 测试车
+    hist_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)  # 历史车
+    temp_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)  # 模版车
+    direction: Optional[int] = 0  # 方向
+    Pantograph_state: int = 0  # 升降弓
+    is_concat: int = 0  # 是否是重联组，0不是重联组，1是重联组
+    img2d_ext: str = ".jpg"  # 2d图像后缀
+    img3d_ext: str = ".data"  # 深度图后缀
