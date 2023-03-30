@@ -1,25 +1,25 @@
-from builtins import ValueError
-from pathlib import Path
-
 import functools
 import numpy as np
+from pathlib import Path
 from skimage.metrics import structural_similarity as ssim
+
+from pystar360.base.dataStruct import QTrainInfo
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy, select_best_yolobox
 from pystar360.utilities.fileManger import read_yaml
 from pystar360.utilities.helper import *
 from pystar360.utilities._logger import d_logger
 
-EPS = 1e-6
-MAXSIZE_CACHE = 8
-
-DEFAULT_COVER_RANGE = 2
-DEFAULT_OFFSET = 0
-DEFAULT_SHIFT = 3
-DEFAULT_STEP = 1
+EPS = 1e-6  # eplison
+MAXSIZE_CACHE = 8  # cache number
 DEFAULT_VAR_THRESHOLD = 1
 DEFAULT_SKIP_NUM = 0
 DEFAULT_CORR_THRES = None
 DEFAULT_MAX_VAR_THRESHOLD = 5000
+DEFAULT_COVER_RANGE = 2  # 覆盖范围
+DEFAULT_OFFSET = 0  # 偏移量
+DEFAULT_SHIFT = 3  # 移动次数
+DEFAULT_STEP = 1  # 移动步长
+
 
 __all__ = ["find_approximate_single_end", "Splitter"]
 
@@ -82,7 +82,7 @@ def find_approximate_single_end(
 class Splitter:
     def __init__(
         self,
-        qtrain_info,
+        qtrain_info: QTrainInfo,
         local_params,
         images_path_list,
         train_library_path,
