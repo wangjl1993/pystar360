@@ -163,7 +163,7 @@ class Locator:
             if len(temp_outputs) > 0:
                 max_output = select_best_yolobox(temp_outputs, method)
                 bbox.curr_rect = yolo_xywh2xyxy_v2(max_output[1:5], bbox.proposal_rect)
-                bbox.score = max_output[0]
+                bbox.conf_score = max_output[-1]
                 bbox.conf_thres = conf_thres
                 new_anchor_bboxes.append(bbox)
 
