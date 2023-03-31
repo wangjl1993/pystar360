@@ -26,7 +26,7 @@ class SmpInfer(BaseInfer):
 
     def _initialize(self):
         try:
-            model = getattr(smp, self.model_type)(**self.model_params)
+            model = getattr(smp, self.model_type)(**self.model_params, encoder_weights=None) # set encoder_weights=None, otherwise smp will download imagenet pretrained model.
         except ValueError:
             if self.logger:
                 self.logger.error(f"Please provide a valid model name {self.model_type} or model params {self.model_params}")
