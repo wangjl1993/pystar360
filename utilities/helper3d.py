@@ -4,52 +4,43 @@ import zipfile
 import numpy as np
 import open3d as o3d
 from pathlib import Path
-
+from typing import Union, Optional
 
 class imread3d_decorator:
-    def __init__(self, h=None, w=None, inner_ext=".data"):
+    def __init__(self, h: Optional[int]=None, w: Optional[int]=None, inner_ext: str='.data') -> None:
+        self.h, self.w = h, w
         self.inner_ext = inner_ext
-        if h is not None and w is None:
-            l = h
-            self.reshape_image = lambda img, img_size: img.reshape((l, img_size // l))
-        elif h is None and w is not None:
-            l = w
-            self.reshape_image = lambda img, img_size: img.reshape((img_size // l, l))
-        elif h is not None and w is not None:
-            self.reshape_image = lambda img, img_size: img.reshape((h, w))
-        else:
-            raise ValueError("Plase input .hx either height or width")
-
-    def __call__(self, path):
+    
+    def __call__(self, path: Union[str, Path]) -> np.ndarray:
         path = Path(path)
-        with zipfile.ZipFile(str(path)) as z:
-            f_name = path.stem + self.inner_ext
+        if path.suffix == '.data':
+            img = self._read_data(path)
+        elif path.suffix == '.hx':
+            img = self._read_hx(path)
+        else:
+            raise NotImplementedError
+        return img
+    
+    def _read_data(self, path: Path) -> np.ndarray:
+        img = cv2.imread(str(path), cv2.IMREAD_ANYDEPTH)
+        return img
+
+    def _read_hx(self, path: Path) -> np.ndarray:
+        assert self.h is not None or self.w is not None, "Plase input .hx either height or width."
+        with zipfile.ZipFile(path) as z:
+            f_name = path.with_suffix(self.inner_ext).name
             with z.open(f_name, 'r') as f:
                 img_byte = f.read()
                 f.seek(0, os.SEEK_END)
                 img_int = np.frombuffer(img_byte, np.uint16)
-                img_size = len(img_int)
-                img_int = self.reshape_image(img_int, img_size)
-        return img_int
-
-
-imread3d_h2000 = imread3d_decorator(h=2000)
-imread3d_w1000 = imread3d_decorator(w=1000)
-
-
-class imread3d_decorator:
-    def __init__(self):
-        pass
-
-    def __call__(self, p):
-        p = Path(p)
-        if p.suffix != ".data":
-            raise NotImplementedError
-        img = cv2.imread(str(p), cv2.IMREAD_ANYDEPTH)
+                img = img_int.reshape((self.h, -1)) if self.h else img_int.reshape((-1, self.w))
         return img
 
 
-imread3d_full = imread3d_decorator()
+
+imread3d_data = imread3d_decorator()     # 主导数据 .data
+imread3d_hx = imread3d_decorator(h=2000) # 华兴三亚数据.hx读取 h=2000， w=2560
+# imread3d_w1000 = imread3d_decorator(w=1000)
 
 
 def depth2pts(depth_img, cam_matrix, scale_factor=1, reshape=True):
