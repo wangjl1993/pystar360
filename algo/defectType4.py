@@ -14,8 +14,8 @@ from pystar360.utilities.helper3d import depthImg2pcd
 # from pystar360.utilities.helper3d import
 from pystar360.utilities._logger import d_logger
 import open3d as o3d
-from typing import Tuple
-
+from typing import Tuple, List, Optional
+from pystar360.base.dataStruct import CarriageInfo, BBox
 @algoDecorator
 class DetectNutLoose3d_v1(algoBaseABC):
     """
@@ -42,7 +42,7 @@ class DetectNutLoose3d_v1(algoBaseABC):
     MIN_DEPTH_VALUE = 0
     AT_LEAST_R_DEPTH = None
 
-    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs):
+    def __call__(self, item_bboxes_list: List[BBox], curr_train3d: CarriageInfo,  **kwargs) -> List[BBox]:
         # if empty, return empty
         if not item_bboxes_list:
             return []
@@ -66,13 +66,20 @@ class DetectNutLoose3d_v1(algoBaseABC):
                 box.index = count
                 new_item_bboxes_list.append(box)
                 count += 1
-                break
-
+                continue
+            
+            if box.curr_rect3d.is_none() or box.curr_rect3d == box.curr_proposal_rect3d:
+                box.description = f">>> curr_rect3d is None or didnt locate the accurate coords, skip"
+                box.is_detected = 1
+                box.index = count
+                new_item_bboxes_list.append(box)
+                count += 1
+                continue
             # get item depth image
             rect_f = box.curr_rect3d
             # convert it to local rect point
-            rect_p = frame2rect(rect_f, test_startline, img_h, img_w, axis=self.axis)
-            item_img = crop_segmented_rect(test_img, rect_p)
+            rect_p = frame2rect(rect_f, curr_train3d.startline, curr_train3d.img_h, curr_train3d.img_w, axis=self.axis)
+            item_img = crop_segmented_rect(curr_train3d.img, rect_p)
             item_img_h, item_img_w = item_img.shape
             # image preprocess
             item_img = cv2.medianBlur(item_img, 3)
@@ -235,8 +242,6 @@ def execute_fast_global_registration(
 class DetectLoose3dByAlign(algoBaseABC):
     """
     根据点云匹配程度(点云配准后重叠的点云对比例), 判断检测螺帽/螺帽松动
-    本流程通过2d流程定位，curr_rect映射到curr_rect3d 直接映射到3点图像，所以不需要yolo，其中图片裁剪框用的是curr_rect3d
-
     depth_items:
         "label_name":
             module: "pystar360.algo.defectType4"
@@ -257,7 +262,7 @@ class DetectLoose3dByAlign(algoBaseABC):
     VOXEL_SIZE = 0.5
     DIST_RANGE = [2, 10]
     
-    def __call__(self, item_bboxes_list, test_img, test_startline, hist_img, hist_startline, img_h, img_w, **kwargs):
+    def __call__(self, item_bboxes_list: List[BBox], curr_train3d: CarriageInfo, hist_train3d: CarriageInfo, **kwargs) -> List[BBox]:
         # if empty, return empty
         if not item_bboxes_list:
             return []
@@ -279,12 +284,28 @@ class DetectLoose3dByAlign(algoBaseABC):
                 box.is_detected = 1
                 box.index = count + 1
                 new_item_bboxes_list.append(box)
-                break
+                continue
+            
+            if box.curr_rect3d.is_none() or box.curr_rect3d == box.curr_proposal_rect3d:
+                box.description = f">>> curr_rect3d is None or didnt locate the accurate coords, skip"
+                box.is_detected = 1
+                box.index = count
+                new_item_bboxes_list.append(box)
+                count += 1
+                continue
 
+            if box.hist_rect3d.is_none() or box.hist_rect3d == box.hist_proposal_rect3d:
+                box.description = f">>> hist_rect3d is None or didnt locate the accurate coords, skip"
+                box.is_detected = 1
+                box.index = count
+                new_item_bboxes_list.append(box)
+                count += 1
+                continue
             # get item depth image: '.data' format
             curr_rect, hist_rect = box.curr_rect3d, box.hist_rect3d
-            curr_rect, hist_rect = frame2rect(curr_rect, test_startline, img_h, img_w, axis=self.axis), frame2rect(hist_rect, hist_startline, img_h, img_w, axis=self.axis)
-            curr_data, hist_data = crop_segmented_rect(test_img, curr_rect), crop_segmented_rect(hist_img, hist_rect)
+            curr_rect = frame2rect(curr_rect, curr_train3d.startline, curr_train3d.img_h, curr_train3d.img_w, axis=self.axis)
+            hist_rect = frame2rect(hist_rect, hist_train3d.startline, hist_train3d.img_h, hist_train3d.img_w, axis=self.axis)
+            curr_data, hist_data = crop_segmented_rect(curr_train3d.img, curr_rect), crop_segmented_rect(hist_train3d.img, hist_rect)
 
             # depth2pointcloud
             curr_pcd = depthImg2pcd(curr_data, camera_matrix, depth_scale, depth_trunc)

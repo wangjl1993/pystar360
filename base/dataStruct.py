@@ -1,8 +1,12 @@
 from dataclasses import dataclass, field, fields, is_dataclass
 from dataclasses_json import dataclass_json
-from typing import List, Optional, Tuple, Union
+from typing import (
+    List, Optional, Tuple, 
+    Union, Any, Callable
+)
 from pystar360.utilities.helper import get_label_num2check
-
+import numpy as np
+import copy
 
 @dataclass_json
 @dataclass
@@ -115,6 +119,27 @@ class Rect(List):
             else getattr(self, field.name)
             for field in fields(self)
         )
+    
+    def is_none(self, ):
+        if self.pt1 == Point() and self.pt2 == Point():
+            return True 
+        else:
+            return False
+
+    def map_to_rect3d(self, axis: int,  map3d_minor_axis_poly_func: Callable, map3d_major_axis_poly_func: Callable):
+        if self.is_none():
+            return Rect()
+        if axis:
+            new_rect = Rect(
+                [map3d_major_axis_poly_func(self.pt1.x), map3d_minor_axis_poly_func(self.pt1.y)],
+                [map3d_major_axis_poly_func(self.pt2.x), map3d_minor_axis_poly_func(self.pt2.y)]
+            )
+        else:
+            new_rect = Rect(
+                [map3d_minor_axis_poly_func(self.pt1.x), map3d_major_axis_poly_func(self.pt1.y)],
+                [map3d_minor_axis_poly_func(self.pt2.x), map3d_major_axis_poly_func(self.pt2.y)]
+            )
+        return new_rect
 
 
 @dataclass_json
@@ -136,17 +161,19 @@ class BBox:
     # rect position in template, 检测框（映射直接用的框）; 比如用yolo的话，就需要把orig_rect扩大一定大小变成temp_rect；不需要的话，就是目标物框(2d)
     _temp_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
     # proposal rect position，初步映射到测试图的框(2d)
-    _proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    _curr_proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
     # rect position in current train 如果有进一步检测，返回yolo精确框；不需要的话，等于proposal_rect (2d)
     _curr_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
-    # proposal rect position, 如果3d图像单独定位，就直接用 proposal_rect3d, 如果3d定位是从2d配准得到的就是用porposal rect
-    _proposal_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    # proposal rect position, 如果3d图像单独定位，就直接用 curr_proposal_rect3d, 如果3d定位是从2d配准得到的就是用porposal rect
+    _curr_proposal_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
     # 3d 目标的bounding bbox
     _curr_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
     # 【optional预留】，# if needed, 预留历史图的框，一般不需要，optional
     _hist_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
     # 【optional预留】，# if needed, 预留历史图3d的框，一般不需要，optional
     _hist_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    _hist_proposal_rect: Union[Rect, List, Tuple] = field(default_factory=Rect)
+    _hist_proposal_rect3d: Union[Rect, List, Tuple] = field(default_factory=Rect)
 
     ############ 2d图像评价 ############
     # confidence level 无论什么方法，计算出来的置信度，信心程度
@@ -208,26 +235,26 @@ class BBox:
             self._curr_rect = Rect(*value)
 
     @property
-    def proposal_rect(self):
-        return self._proposal_rect
+    def curr_proposal_rect(self):
+        return self._curr_proposal_rect
 
-    @proposal_rect.setter
-    def proposal_rect(self, value):
+    @curr_proposal_rect.setter
+    def curr_proposal_rect(self, value):
         if isinstance(value, Rect):
-            self._proposal_rect = value
+            self._curr_proposal_rect = value
         else:
-            self._proposal_rect = Rect(*value)
+            self._curr_proposal_rect = Rect(*value)
 
     @property
-    def proposal_rect3d(self):
-        return self._proposal_rect3d
+    def curr_proposal_rect3d(self):
+        return self._curr_proposal_rect3d
 
-    @proposal_rect3d.setter
-    def proposal_rect3d(self, value):
+    @curr_proposal_rect3d.setter
+    def curr_proposal_rect3d(self, value):
         if isinstance(value, Rect):
-            self._proposal_rect3d = value
+            self._curr_proposal_rect3d = value
         else:
-            self._proposal_rect3d = Rect(*value)
+            self._curr_proposal_rect3d = Rect(*value)
 
     @property
     def curr_rect3d(self):
@@ -271,11 +298,33 @@ class BBox:
         if isinstance(value, Rect):
             self._hist_rect3d = value
         else:
-            self._hist_rect = Rect(*value)
+            self._hist_rect3d = Rect(*value)
+
+    @property
+    def hist_proposal_rect(self):
+        return self._hist_proposal_rect
+
+    @hist_proposal_rect.setter
+    def hist_proposal_rect(self, value):
+        if isinstance(value, Rect):
+            self._hist_proposal_rect = value
+        else:
+            self._hist_proposal_rect = Rect(*value)
+
+    @property
+    def hist_proposal_rect3d(self):
+        return self._hist_proposal_rect3d
+
+    @hist_proposal_rect3d.setter
+    def hist_proposal_rect3d(self, value):
+        if isinstance(value, Rect):
+            self._hist_proposal_rect3d = value
+        else:
+            self._hist_proposal_rect3d = Rect(*value)
 
     def __validate(self):
         for f in fields(self):
-            if f.name in ("temp_rect", "curr_rect", "proposal_rect", "orig_rect", "hist_rect"):
+            if f.name in ("temp_rect", "orig_rect", "curr_rect", "curr_proposal_rect",  "hist_rect", "hist_proposal_rect"):
                 value = getattr(self, f.name)
                 assert len(value) == 2
                 setattr(self, f.name, Rect(*value))
@@ -314,9 +363,42 @@ def bboxes_collector(bboxes):
 @dataclass
 class CarriageInfo:
     path: str = ""  # 图像文件地址
+    img_h: Optional[int] = 0 # 一帧图片 h
+    img_w: Optional[int] = 0 # 一帧图片 w
     startline: float = 0.0  # 车体起始位置
     endline: float = 0.0  # 车体结束位置
-    path3d: str = ""  # 深度图像文件地址，通常和2d图像文件地址一致
+    img: Optional[np.ndarray] = None # 整节车厢拼接图
+    anchors: Optional[List[BBox]] = field(default_factory=list)
+    normal_items: Optional[List[BBox]] = field(default_factory=list)
+    static_chunks: Optional[List[Tuple[str, List[BBox]]]] = field(default_factory=list)
+    dynamic_chunks: Optional[List] = field(default_factory=list)
+
+
+    __fronze_fields__ = {
+        "startline": 1, "endline": 1, "img_h": 1, "img_w": 1, "path": 1, "img": 1,
+        "anchors": 1, "normal_items": 1, "static_chunks": 1, "dynamic_chunks": 1
+    } 
+    __fronze_fields_cnt__ = {
+        "startline": 0, "endline": 0, "img_h": 0, "img_w": 0, "path": 0, "img": 0,
+        "anchors": 0, "normal_items": 0, "static_chunks": 0, "dynamic_chunks": 0
+    }    
+
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        print("set: ", __name)
+        self_count_key = f"__{id(self)}_fronze_fields_cnt__"
+        try:
+            self_count_value = getattr(self, self_count_key)
+        except AttributeError:
+            _val = copy.deepcopy(self.__fronze_fields_cnt__)
+            super().__setattr__(self_count_key, _val)
+            self_count_value = _val
+        
+        cur_val = self_count_value.get(__name, 0)
+        if cur_val > self.__fronze_fields__[__name]:
+            raise ValueError()
+        super().__setattr__(__name, __value)
+        self_count_value[__name] = cur_val+1
+
 
 
 @dataclass_json
@@ -328,11 +410,23 @@ class QTrainInfo:
     train_sn: str = ""  # 运行编号 2101300005, date or uid
     channel: str = ""  # 相机通道 12,4,17...
     carriage: int = 0  # 辆位 1-8 or 1-16
-    test_train: CarriageInfo = field(default_factory=CarriageInfo)  # 测试车
-    hist_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)  # 历史车
+    curr_train2d: Optional[CarriageInfo] = None  # 测试车
+    curr_train3d: Optional[CarriageInfo] = None  # 测试车
+    hist_train2d: Optional[CarriageInfo] = None  # 历史车
+    hist_train3d: Optional[CarriageInfo] = None  # 历史车
+    item_bboxes: Optional[List[BBox]] = field(default_factory=list) # 所有检测项点收集到这里
     temp_train: Optional[CarriageInfo] = field(default_factory=CarriageInfo)  # 模版车
     direction: Optional[int] = 0  # 方向
     Pantograph_state: int = 0  # 升降弓
     is_concat: int = 0  # 是否是重联组，0不是重联组，1是重联组
     img2d_ext: str = ".jpg"  # 2d图像后缀
     img3d_ext: str = ".data"  # 深度图后缀
+
+
+    # def __getattribute__(self, __name: str) -> Any:
+    #     print("get: ", __name)
+    #     return super().__getattr__(__name)
+    
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        print("set: ", __name)
+        super().__setattr__(__name, __value)

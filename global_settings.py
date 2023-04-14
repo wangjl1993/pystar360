@@ -31,3 +31,5 @@ print_product_info()
 # HITO 海拓
 CLIENT = "HITO"
 SUFFIX_3D = "3D"
+USE_3D = False
+USE_HIST = False

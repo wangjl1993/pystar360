@@ -1,7 +1,7 @@
 
 import cv2
 from pathlib import Path
-from pystar360.base.dataStruct import json2bbox_formater
+from pystar360.base.dataStruct import json2bbox_formater, QTrainInfo
 from pystar360.utilities.fileManger import write_json, read_json
 from pystar360.utilities.deviceController import get_torch_device, get_environ_info
 from pystar360.utilities.helper import (concat_str, read_segmented_img, imread_full, crop_segmented_rect,
@@ -16,7 +16,7 @@ import pystar360.global_settings as SETTINGS
 ################################################################################
 __all__ = ["pyStar360RobotBase"]
 class pyStar360RobotBase:
-    def __init__(self, qtrain_info, device="cpu", logger=None):
+    def __init__(self, qtrain_info: QTrainInfo, device="cpu", logger=None):
         self.qtrain_info = qtrain_info 
         self.device = get_torch_device(device) 
         self.logger = logger 
@@ -154,7 +154,7 @@ class CropToolDev:
     
     @staticmethod
     def _dev_generate_items(save_path, img,bboxes, startline, img_h, img_w, axis, qtrain_info, 
-                        target_item_list=[], rect_type="proposal_rect"):
+                        target_item_list=[], rect_type="curr_proposal_rect"):
         if not bboxes:
             return 
 

@@ -31,7 +31,7 @@ def plt_bboxes_on_img(
     vis_lv=1,
     resize_ratio=0.1,
     default_color=palette.GREEN,
-    use_3drect=False,
+    rect='curr_rect'   #  curr_rect3d, hist_rect, hist_rect3d
 ):
     if not bboxes:
         return img
@@ -47,10 +47,7 @@ def plt_bboxes_on_img(
         else:
             color = default_color
 
-        if use_3drect:
-            points = frame2rect(b.curr_rect3d, startline, img_h, img_w, axis=axis)
-        else:
-            points = frame2rect(b.curr_rect, startline, img_h, img_w, axis=axis)
+        points = frame2rect(b.__getattribute__(rect), startline, img_h, img_w, axis=axis)
         cv2.rectangle(img, points[0], points[1], color.value, 1)
 
         if vis_lv < 1:
@@ -61,11 +58,11 @@ def plt_bboxes_on_img(
             text = concat_str(b.name, b.index, b.conf_score)
         else:
             text = concat_str(b.name, b.index, b.conf_score)
-            if use_3drect:
-                proposal_points = frame2rect(b.proposal_rect3d, startline, img_h, img_w, axis=axis)
-            else:
-                proposal_points = frame2rect(b.proposal_rect, startline, img_h, img_w, axis=axis)
-            cv2.rectangle(img, proposal_points[0], proposal_points[1], palette.PURPLE.value, 1)
+            # if use_3drect:
+            #     proposal_points = frame2rect(b.curr_proposal_rect3d, startline, img_h, img_w, axis=axis)
+            # else:
+            #     proposal_points = frame2rect(b.curr_proposal_rect, startline, img_h, img_w, axis=axis)
+            # cv2.rectangle(img, proposal_points[0], proposal_points[1], palette.PURPLE.value, 1)
 
         cv2.putText(img, text, points[0], cv2.FONT_HERSHEY_PLAIN, 1.5, color.value)
 

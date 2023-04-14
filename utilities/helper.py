@@ -5,6 +5,8 @@
 import re
 import cv2
 import numpy as np
+from scipy.optimize import linear_sum_assignment
+from scipy.spatial.distance import cdist
 
 
 class imread_decorator:
@@ -366,6 +368,12 @@ def read_segmented_rect(l, rect, imread):
     img = img[y_top:y_bottom, :]
     return img
 
+def hungary_match(array1: np.ndarray, array2: np.ndarray):
+    """Hungary graph match algorithm."""
+    dists = cdist(array1, array2, 'euclidean')
+    match_res = linear_sum_assignment(dists)
+    match_res = {match_res[0][i]: match_res[1][i] for i in range(len(match_res[0]))}
+    return match_res
 
 # def imread_decorator(resize_ratio):
 #     """Image read (GRAY)"""

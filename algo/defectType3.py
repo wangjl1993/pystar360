@@ -9,7 +9,8 @@ from pystar360.algo.algoBase import algoBaseABC, algoDecorator
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect
 from pystar360.utilities._logger import d_logger
-
+from pystar360.base.dataStruct import CarriageInfo, BBox
+from typing import List
 
 @algoDecorator
 class DetectAtMostNObj(algoBaseABC):
@@ -27,7 +28,7 @@ class DetectAtMostNObj(algoBaseABC):
             at_most_n: 0
     """
 
-    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs):
+    def __call__(self, item_bboxes_list: List[BBox], curr_train2d: CarriageInfo, **kwargs) -> List[BBox]:
         # if empty, return empty
         if not item_bboxes_list:
             return []
@@ -48,10 +49,10 @@ class DetectAtMostNObj(algoBaseABC):
         for _, box in enumerate(item_bboxes_list):
 
             # get proposal rect
-            proposal_rect_f = box.proposal_rect
+            proposal_rect_f = box.curr_proposal_rect
             # convert it to local rect point
-            proposal_rect_p = frame2rect(proposal_rect_f, test_startline, img_h, img_w, axis=self.axis)
-            img = crop_segmented_rect(test_img, proposal_rect_p)
+            proposal_rect_p = frame2rect(proposal_rect_f, curr_train2d.startline, curr_train2d.img_h, curr_train2d.img_w, axis=self.axis)
+            img = crop_segmented_rect(curr_train2d.img, proposal_rect_p)
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
             # infer

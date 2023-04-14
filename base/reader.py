@@ -122,8 +122,6 @@ class BatchImReader(ImReaderABC):
     def __init__(
         self,
         qtrain_info: QTrainInfo,
-        need3d=False,
-        need_hist=False,
         check_files=True,
         logger=None,
         debug=False,
@@ -131,8 +129,6 @@ class BatchImReader(ImReaderABC):
         client="HITO",
     ):
         self.qtrain_info = qtrain_info
-        self.need3d = need3d
-        self.need_hist = need_hist
         self.check_files = check_files
         self.logger = logger if logger else d_logger
         self.debug = debug
@@ -141,19 +137,19 @@ class BatchImReader(ImReaderABC):
 
         self.filter_rules = self._get_filters()
 
-        self._test_img_list = None
+        self._test_img2d_list = None
         self._test_img3d_list = None
-        self._hist_img_list = None
+        self._hist_img2d_list = None
         self._hist_img3d_list = None
         self._read()
 
     @property
-    def test_img_list(self):
-        return self._test_img_list
+    def test_img2d_list(self):
+        return self._test_img2d_list
 
     @property
-    def hist_img_list(self):
-        return self._hist_img_list
+    def hist_img2d_list(self):
+        return self._hist_img2d_list
 
     @property
     def test_img3d_list(self):
@@ -201,35 +197,36 @@ class BatchImReader(ImReaderABC):
 
         if len(file_list) != 0:
             if self.check_files:
-                self._check_file()
+                self._check_file(file_list)
 
             file_list = list(map(str, file_list))
-            self.logger.info(f">>> The number of images listed in the given path: {self.__len__()}")
+            self.logger.info(f">>> The number of images listed in the given path: {len(file_list)}")
         else:
-            raise FileNotFoundError(f">>> The number of images listed in the given path: {self.__len__()}")
+            raise FileNotFoundError(f">>> The number of images listed in the given path: {len(file_list)}")
 
         return file_list
 
     def _read(self):
         # read test image
-        self.test_img_list = self._read_from_single_path(
-            self.qtrain_info.test_train.path, self.filter_rules, self.qtrain_info.img2d_ext
-        )
+        if self.qtrain_info.curr_train2d is not None:
+            self._test_img2d_list = self._read_from_single_path(
+                self.qtrain_info.curr_train2d.path, self.filter_rules, self.qtrain_info.img2d_ext
+            )
 
         # if need 3d
-        if self.need3d:
-            self.test_img3d_list = self._read_from_single_path(
-                self.qtrain_info.test_train.path3d, self.filter_rules, self.qtrain_info.img3d_ext
+        if self.qtrain_info.curr_train3d is not None:
+            self._test_img3d_list = self._read_from_single_path(
+                self.qtrain_info.curr_train3d.path, self.filter_rules, self.qtrain_info.img3d_ext
             )
 
         # if need hist
-        if self.need_hist:
-            self.hist_img_list = self._read_from_single_path(
-                self.qtrain_info.hist_train.path, self.filter_rules, self.qtrain_info.img2d_ext
+        if self.qtrain_info.hist_train2d is not None:
+            self._hist_img2d_list = self._read_from_single_path(
+                self.qtrain_info.hist_train2d.path, self.filter_rules, self.qtrain_info.img2d_ext
             )
 
         # if need hist and need 3d
-        if self.need_hist and self.need3d:
-            self.hist_img3d_list = self._read_from_single_path(
-                self.qtrain_info.hist_train.path, self.filter_rules, self.qtrain_info.img3d_ext
+        if self.qtrain_info.hist_train3d is not None:
+            self._hist_img3d_list = self._read_from_single_path(
+                self.qtrain_info.hist_train3d.path, self.filter_rules, self.qtrain_info.img3d_ext
             )

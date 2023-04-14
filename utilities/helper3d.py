@@ -4,7 +4,8 @@ import zipfile
 import numpy as np
 import open3d as o3d
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, List, Callable
+from pystar360.base.dataStruct import BBox, Rect
 
 class imread3d_decorator:
     def __init__(self, h: Optional[int]=None, w: Optional[int]=None, inner_ext: str='.data') -> None:
@@ -112,3 +113,19 @@ def rgbdImg2pcd(rgb_img, d_img, cam_matrix, depth_scale=1, depth_trunc=1000):
     )
     pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_img, intrinsic, project_valid_depth_only=True)
     return pcd
+
+def map3d_for_bboxes(
+        bboxes: Union[List[BBox], BBox], axis: int, minor_axis_poly_func: Callable, 
+        major_axis_poly_func: Optional[Callable]=np.poly1d([1,0])
+    ) -> None:
+    if isinstance(bboxes, list):
+        for bbox in bboxes:
+            bbox.curr_rect3d = bbox.curr_rect.map_to_rect3d(axis, minor_axis_poly_func, major_axis_poly_func)
+            bbox.hist_rect3d = bbox.hist_rect.map_to_rect3d(axis, minor_axis_poly_func, major_axis_poly_func)
+            bbox.curr_proposal_rect3d = bbox.curr_proposal_rect.map_to_rect3d(axis, minor_axis_poly_func, major_axis_poly_func)
+            bbox.hist_proposal_rect3d = bbox.hist_proposal_rect.map_to_rect3d(axis, minor_axis_poly_func, major_axis_poly_func)
+    else:
+        bboxes.curr_rect3d = bboxes.curr_rect.map_to_rect3d(axis, minor_axis_poly_func, major_axis_poly_func)
+        bboxes.hist_rect3d = bboxes.hist_rect.map_to_rect3d(axis, minor_axis_poly_func, major_axis_poly_func)
+        bboxes.curr_proposal_rect3d = bboxes.curr_proposal_rect.map_to_rect3d(axis, minor_axis_poly_func, major_axis_poly_func)
+        bboxes.hist_proposal_rect3d = bboxes.hist_proposal_rect.map_to_rect3d(axis, minor_axis_poly_func, major_axis_poly_func)

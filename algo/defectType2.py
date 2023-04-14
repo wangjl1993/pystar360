@@ -8,7 +8,8 @@ import numpy as np
 from pystar360.algo.algoBase import algoBaseABC, algoDecorator
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect
 from pystar360.ano.inference import PatchCoreInfer
-
+from pystar360.base.dataStruct import CarriageInfo, BBox
+from typing import List, Optional
 
 from pystar360.utilities._logger import d_logger
 
@@ -39,7 +40,7 @@ class DetectForeignObjectWholeImage(algoBaseABC):
     FLIP_LR = False
     FLIP_UD = False
 
-    def __call__(self, item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs):
+    def __call__(self, item_bboxes_list: List[BBox], curr_train2d: CarriageInfo, **kwargs) -> List[BBox]:
         # if empty, return empty
         if not item_bboxes_list:
             return []
@@ -69,10 +70,10 @@ class DetectForeignObjectWholeImage(algoBaseABC):
         for _, box in enumerate(item_bboxes_list):
 
             # get proposal rect
-            proposal_rect_f = box.proposal_rect
+            proposal_rect_f = box.curr_proposal_rect
             # convert it to local rect point
-            proposal_rect_p = frame2rect(proposal_rect_f, test_startline, img_h, img_w, axis=self.axis)
-            img = crop_segmented_rect(test_img, proposal_rect_p)
+            proposal_rect_p = frame2rect(proposal_rect_f, curr_train2d.startline, curr_train2d.img_h, curr_train2d.img_w, axis=self.axis)
+            img = crop_segmented_rect(curr_train2d.img, proposal_rect_p)
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
             if flip_lr:
@@ -86,7 +87,7 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             box.index = count
             box.conf_score = score
             box.conf_thres = conf_thres
-            # box.curr_rect = box.proposal_rect
+            # box.curr_rect = box.curr_proposal_rect
             box.is_defect = 1 if score > conf_thres else 0
             box.is_detected = 1
             box.description = f">>> box: {box.name}; score {score}; threshold: {conf_thres}."

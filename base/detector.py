@@ -2,7 +2,7 @@ from importlib import import_module
 from typing import Dict, List
 from omegaconf import DictConfig, ListConfig
 
-from pystar360.base.dataStruct import bboxes_collector
+from pystar360.base.dataStruct import bboxes_collector, QTrainInfo
 from pystar360.algo.algoBase import NullDetection
 from pystar360.utilities._logger import d_logger
 
@@ -10,7 +10,7 @@ __all__ = ["Detector"]
 
 
 class Detector:
-    def __init__(self, qtrain_info, item_params, device, axis=1, logger=None, debug=False, mac_password=None):
+    def __init__(self, qtrain_info: QTrainInfo, item_params, device, axis=1, logger=None, debug=False, mac_password=None):
         # query train informaiton
         self.qtrain_info = qtrain_info
 
@@ -24,12 +24,12 @@ class Detector:
         self.debug = debug
         self.mac_password = mac_password
 
-    def detect_items(self, item_bboxes, test_img, test_startline, img_w, img_h, **kwargs):
-        if not item_bboxes:
+    def detect_items(self, **kwargs):
+        if not self.qtrain_info.item_bboxes:
             return []
 
         # collect bboxes
-        item_bboxes_dict = bboxes_collector(item_bboxes)
+        item_bboxes_dict = bboxes_collector(self.qtrain_info.item_bboxes)
         self.logger.info(f">>> Start detection...")
 
         new_item_bboxes = []
@@ -80,17 +80,23 @@ class Detector:
 
                 # sorting
                 if self.axis == 0:
-                    item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
+                    item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.curr_proposal_rect[0][1])
                 else:
-                    item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
-
+                    item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.curr_proposal_rect[0][0])
+                    
                 # run algorithm
                 if self.debug:
-                    local_item_bboxes = func(item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs)
+                    local_item_bboxes = func(
+                        item_bboxes_list, curr_train2d=self.qtrain_info.curr_train2d, curr_train3d=self.qtrain_info.curr_train3d, 
+                        hist_train2d=self.qtrain_info.hist_train2d, hist_train3d=self.qtrain_info.hist_train3d, **kwargs
+                    )
                     item_bboxes_list = local_item_bboxes
                 else:
                     try:
-                        local_item_bboxes = func(item_bboxes_list, test_img, test_startline, img_h, img_w, **kwargs)
+                        local_item_bboxes = func(
+                            item_bboxes_list, curr_train2d=self.qtrain_info.curr_train2d, curr_train3d=self.qtrain_info.curr_train3d, 
+                            hist_train2d=self.qtrain_info.hist_train2d, hist_train3d=self.qtrain_info.hist_train3d, **kwargs
+                        )
                         item_bboxes_list = local_item_bboxes
                     except Exception as e:
                         local_item_bboxes = item_bboxes_list
@@ -112,9 +118,9 @@ class Detector:
 
             # sorting
             if self.axis == 0:
-                item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][1])
+                item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.curr_proposal_rect[0][1])
             else:
-                item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.proposal_rect[0][0])
+                item_bboxes_list = sorted(item_bboxes_list, key=lambda x: x.curr_proposal_rect[0][0])
 
             # run func
             func = NullDetection()
