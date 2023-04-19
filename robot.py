@@ -1,192 +1,279 @@
-
 import cv2
-from pathlib import Path
-from pystar360.base.dataStruct import json2bbox_formater, QTrainInfo
-from pystar360.utilities.fileManger import write_json, read_json
-from pystar360.utilities.deviceController import get_torch_device, get_environ_info
-from pystar360.utilities.helper import (concat_str, read_segmented_img, imread_full, crop_segmented_rect,
-    imread_tenth, imread_quarter, frame2rect)
-from pystar360.utilities.misc import TryExcept
-from pystar360.utilities._logger import d_logger
+from pystar360.robot import pyStar360RobotBase
+import top.local_settings as SETTINGS
+from pystar360.utilities.helper import (
+    concat_str, imread_full,
+    crop_segmented_rect, frame2rect,
+)
+from pystar360.utilities.visualizer import plt_bboxes_on_img
+from pystar360.utilities.helper3d import imread3d_hx
+from pystar360.utilities.fileManger import read_json, read_yaml
+from pystar360.base.dataStruct import json2bbox_formater
+from pystar360.base.locator import Locator
+from pystar360.base.splitter import Splitter
+from pystar360.base.reader import BatchImReader
+from pystar360.base.detector import Detector
+import numpy as np
+import os
+from pystar360.utilities.logger import w_logger
 
-import pystar360.global_settings as SETTINGS
+###  develop example
+class pyStar360DevRobot(pyStar360RobotBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.channel_params_fpath = SETTINGS.CHANNEL_PARAMS_PATH / self.qtrain_info.minor_train_code / "channel_params.yaml"
+        self.item_params_fpath = SETTINGS.ITEM_PARAMS_PATH / self.qtrain_info.minor_train_code / "item_params.yaml"
+        self.channel_params = read_yaml(self.channel_params_fpath, key=SETTINGS.MAC_PASSWORD)[str(self.qtrain_info.channel)]
+        self.item_params = read_yaml(self.item_params_fpath, key=SETTINGS.MAC_PASSWORD)
+        
+        # 根据自己路径读取模板，静态模板
+        self.template_dir = SETTINGS.TEMPLATE_PATH / self.qtrain_info.minor_train_code
+        template_path = self.template_dir / f"template_{self.qtrain_info.channel}.json"
+        self.itemInfo = read_json(template_path, key=SETTINGS.MAC_PASSWORD)["carriages"][str(self.qtrain_info.carriage)]
+        static_template_path = self.template_dir / "chunk_items_template.json"
+        self.static_template = read_json(static_template_path, key=SETTINGS.MAC_PASSWORD) if static_template_path.exists() else None
 
-################################################################################
-#### 这个robot base只是用于开发例子展示，不一定非要使用这个类
-################################################################################
-__all__ = ["pyStar360RobotBase"]
-class pyStar360RobotBase:
-    def __init__(self, qtrain_info: QTrainInfo, device="cpu", logger=None):
-        self.qtrain_info = qtrain_info 
-        self.device = get_torch_device(device) 
-        self.logger = logger 
-        if self.logger:
-            self.logger.info(f">>> Environment device: {get_environ_info()}")
-            self.logger.info(f">>> Using device: {self.device}")
-        else:
-            d_logger.info(f">>> Environment device: {get_environ_info()}")
-            d_logger.info(f">>> Using device: {self.device}")
+        self.imreader = BatchImReader(
+            qtrain_info=self.qtrain_info,
+            client='HUAXING',
+            debug=True
+        )
+        self.splitter = Splitter(
+            self.qtrain_info, self.channel_params.splitter, self.imreader, SETTINGS.TRAIN_LIB_PATH, 
+            self.device, axis=self.channel_params.axis, debug=True, mac_password=SETTINGS.MAC_PASSWORD
+        )
+        self.locator = Locator(
+            qtrain_info=self.qtrain_info, local_params=self.channel_params.locator, device=self.device, 
+            axis=self.channel_params.axis, debug=True, mac_password=SETTINGS.MAC_PASSWORD
+        )
+        self._init_carriage_info()
 
-    ###  example
-    #     # output save path 
-    #     self.output_save_path = SETTINGS.LOCAL_OUTPUT_PATH / concat_str(self.qtrain_info.major_train_code, 
-    #                 self.qtrain_info.minor_train_code, self.qtrain_info.train_num, self.qtrain_info.train_sn)
-    #     self.output_save_path.mkdir(exist_ok=True, parents=True)
+    def _init_carriage_info(self, ):
+        if self.qtrain_info.curr_train2d is not None:
+            self.qtrain_info.curr_train2d.img_h = self.channel_params.img_h
+            self.qtrain_info.curr_train2d.img_w = self.channel_params.img_w
 
-    #     template_path = self.template_path / "template.json"
-    #     self.itemInfo = read_json(str(template_path))["carriages"][str(self.qtrain_info.carriage)]
-    #     self.imreader = ImReader(self.qtrain_info.test_train.path, self.qtrain_info.channel, verbose=True, logger=self.logger)
-    #     self.splitter = Splitter(self.qtrain_info, self.channel_params.splitter, self.imreader, 
-    #                     SETTINGS.TRAIN_LIB_PATH, self.device, axis=self.channel_params.axis, logger=self.logger)
-    #     self.locator = Locator(self.qtrain_info, self.channel_params.locator, self.itemInfo, 
-    #                             self.device, axis=self.channel_params.axis, logger=self.logger)
-    #     self.detector = Detector(self.qtrain_info, self.item_params, self.itemInfo, self.device,
-    #                             axis=self.channel_params.axis, logger=self.logger)
+        if self.qtrain_info.curr_train3d is not None:
+            self.qtrain_info.curr_train3d.img_h = self.channel_params.img3d_h
+            self.qtrain_info.curr_train3d.img_w = self.channel_params.img3d_w
 
-    def run2d(self, *args, **kwargs):
-        raise NotImplementedError
+        if self.qtrain_info.hist_train2d is not None:
+            self.qtrain_info.hist_train2d.img_h = self.channel_params.img_h
+            self.qtrain_info.hist_train2d.img_w = self.channel_params.img_w
+        
+        if self.qtrain_info.hist_train3d is not None:
+            self.qtrain_info.hist_train3d.img_h = self.channel_params.img3d_h
+            self.qtrain_info.hist_train3d.img_w = self.channel_params.img3d_w
 
-    def run3d(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def run2d_hist(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def run3d_hist(self, *args, **kwargs):
-        raise NotImplementedError
-    
-    @TryExcept()
     def run(self):
-        raise NotImplementedError
 
-    def _dev_generate_cutpoints_(self, save_path, cutframe_idxes=None, imread=imread_tenth):
-        """generate cut points for training"""
-        if cutframe_idxes is not None:
-            self.splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
-        else:
+        cfg = read_yaml("develop_cfg.yaml")
+        crop_seg = cfg.get("crop_seg", False)
+        generate_template = cfg.get("generate_template", False)
+        crop_anchors = cfg.get("crop_anchors", False) 
+        crop_items = cfg.get("crop_items", [])
+
+        #  crop head/tail/connector 
+        if crop_seg:
             cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
-            # update cutframe idx
-            self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
-                        cutframe_idxes[self.qtrain_info.carriage])
+            self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], cutframe_idxes[self.qtrain_info.carriage])
+            output_save_path = SETTINGS.DATASET_PATH / concat_str(self.qtrain_info.major_train_code, f"{self.qtrain_info.channel}" ,"seg_dataset")
+            output_save_path.mkdir(exist_ok=True, parents=True)
+            self.splitter._dev_generate_cutpoints_img_(output_save_path)
 
-        self.splitter._dev_generate_cutpoints_img_(save_path, imread=imread_tenth)
+        if generate_template:
+            cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
+            self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], cutframe_idxes[self.qtrain_info.carriage])
+            output_save_path = SETTINGS.OUTPUT_PATH / concat_str(self.qtrain_info.major_train_code, "template", self.qtrain_info.train_sn)
+            self.splitter._dev_generate_car_template_(output_save_path)
     
-    def _dev_generate_template_(self, save_path, cutframe_idxes=None, imread=imread_quarter):
-        """Generate carriage template"""
-        if cutframe_idxes is not None:
-            self.splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
-        else:
-            cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
-            # update cutframe idx
-            self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
-                        cutframe_idxes[self.qtrain_info.carriage])
+        if crop_anchors:
+            output_save_path = SETTINGS.DATASET_PATH / concat_str(self.qtrain_info.major_train_code, f"{self.qtrain_info.channel}" ,"anchors_dataset")
+            output_save_path.mkdir(exist_ok=True, parents=True)
+            self.splitter.run(imread_full)
+            self.locator.update_temp_traininfo(self.itemInfo["startline"], self.itemInfo["endline"])                        
+            self.locator.update_test_traininfo(self.qtrain_info.curr_train2d.startline, self.qtrain_info.curr_train2d.endline)
+            anchors_bbox = json2bbox_formater(self.itemInfo.get("anchors", []))
+            self.locator._dev_generate_anchors_img_(
+                anchors_bbox, output_save_path, self.qtrain_info.curr_train2d.img, 
+                self.qtrain_info.curr_train2d.img_h, self.qtrain_info.curr_train2d.img_w
+            )
 
-        self.splitter._dev_generate_car_template_(save_path, imread=imread)
 
-    def _dev_generate_anchors_(self, save_path, cutframe_idxes=None, label_list=[]):
-        """Generate anchor image"""
-        if cutframe_idxes is not None:
-            self.splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
-        else:
-            cutframe_idxes = self.splitter.get_approximate_cutframe_idxes()
-            # update cutframe idx
-            self.splitter.update_cutframe_idx(cutframe_idxes[self.qtrain_info.carriage-1], 
-                        cutframe_idxes[self.qtrain_info.carriage])
-        test_startline, test_endline = self.splitter.get_specific_cutpoints()
+        if len(crop_items) > 0:
+            output_save_path = SETTINGS.DATASET_PATH / concat_str(self.qtrain_info.major_train_code, "items_dataset")
+            output_save_path.mkdir(exist_ok=True, parents=True)
 
-        self.channel_params =  self.channel_params[str(self.qtrain_info.channel)]
-        self.qtrain_info.test_train.startline = test_startline
-        self.qtrain_info.test_train.endline = test_endline
-        img_h = self.channel_params.img_h 
-        img_w = self.channel_params.img_w
-        test_img = read_segmented_img(self.imreader, test_startline, test_endline, 
-                imread_full, axis=self.channel_params.axis)
+            if self.qtrain_info.curr_train2d.img is None:
+                self.splitter.run(imread_full)
+            
+            anchor_bboxes = json2bbox_formater(self.itemInfo.get("anchors", []))
+            item_bboxes = json2bbox_formater(self.itemInfo.get("items", []))
+            static_chunk_bboxes = json2bbox_formater(self.itemInfo.get("static_chunks", []))
+            dynamic_chunk_bboxes = json2bbox_formater(self.itemInfo.get("dynamic_chunks", []))
+            self.locator.update_temp_traininfo(self.itemInfo["startline"], self.itemInfo["endline"])
+            self.locator.run(anchor_bboxes, item_bboxes, static_chunk_bboxes, dynamic_chunk_bboxes, self.static_template)
+
+            all_bboxes = self.qtrain_info.item_bboxes
+            for bbox in all_bboxes:
+                name = bbox.name
+                if name in crop_items:
+                    proposal_rect_f = bbox.curr_proposal_rect
+                    proposal_rect_p = frame2rect(
+                        proposal_rect_f, self.qtrain_info.curr_train2d.startline, self.qtrain_info.curr_train2d.img_h, 
+                        self.qtrain_info.curr_train2d.img_w, axis=self.channel_params.axis
+                    )
+                    img = crop_segmented_rect(self.qtrain_info.curr_train2d.img, proposal_rect_p)
+                    save_root = output_save_path / name
+                    save_root.mkdir(exist_ok=True, parents=True)
+                    n = len(os.listdir(save_root))
+                    save_name = save_root / f"{self.qtrain_info.train_num}-{self.qtrain_info.train_sn}-{self.qtrain_info.channel}-{self.qtrain_info.carriage}-{n:04}.jpg"
+                    cv2.imwrite(str(save_name), img)
+
+
+### deploy example
+class pyStar360DepRobot(pyStar360RobotBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.channel_params_fpath = SETTINGS.CHANNEL_PARAMS_PATH / self.qtrain_info.minor_train_code / "channel_params.yaml"
+        self.item_params_fpath = SETTINGS.ITEM_PARAMS_PATH / self.qtrain_info.minor_train_code / "item_params.yaml"
+        self.channel_params = read_yaml(self.channel_params_fpath, key=SETTINGS.MAC_PASSWORD)[str(self.qtrain_info.channel)]
+        self.item_params = read_yaml(self.item_params_fpath, key=SETTINGS.MAC_PASSWORD)
         
-        # 定位
-        template_path = self.template_path / "template.json"
-        itemInfo = read_json(str(template_path))["carriages"][str(self.qtrain_info.carriage)]
+        # 根据自己路径读取模板，静态模板
+        self.template_dir = SETTINGS.TEMPLATE_PATH / self.qtrain_info.minor_train_code
+        template_path = self.template_dir / f"template_{self.qtrain_info.channel}.json"
+        self.itemInfo = read_json(template_path, key=SETTINGS.MAC_PASSWORD)["carriages"][str(self.qtrain_info.carriage)]
+        static_template_path = self.template_dir / "chunk_items_template.json"
+        self.static_template = read_json(static_template_path, key=SETTINGS.MAC_PASSWORD) if static_template_path.exists() else None
 
-        self.locator.update_test_traininfo(test_startline, test_endline)
-        self.locator.update_temp_traininfo(itemInfo["startline"], itemInfo["endline"])
-        anchor_bboxes = json2bbox_formater(itemInfo.get("anchors", []))
-        self.locator._dev_generate_anchors_img_(anchor_bboxes, save_path, test_img, img_h, img_w,
-                     label_list=label_list)
+        try:
+            self.imreader = BatchImReader(
+                qtrain_info=self.qtrain_info,
+                client='HUAXING'
+            )
+            self.splitter = Splitter(
+                self.qtrain_info, self.channel_params.splitter, self.imreader, SETTINGS.TRAIN_LIB_PATH, 
+                self.device, axis=self.channel_params.axis, mac_password=SETTINGS.MAC_PASSWORD
+            )
 
-    def _dev_generate_items_(self, save_path, item_bboxes, test_img, test_startline, img_w, img_h, axis, label_list=[]):
-        """Generate item images"""
-        import cv2
-        save_path.mkdir(exist_ok=True, parents=True)
+            self.locator = Locator(
+                qtrain_info=self.qtrain_info, local_params=self.channel_params.locator, device=self.device, 
+                axis=self.channel_params.axis, mac_password=SETTINGS.MAC_PASSWORD
+            )
+            self.detector = Detector(
+                qtrain_info=self.qtrain_info, item_params=self.item_params, device=self.device, 
+                axis=self.channel_params.axis, mac_password=SETTINGS.MAC_PASSWORD
+            )
+            self._init_carriage_info()
+        except Exception as e:
+            w_logger.error(e)
+            w_logger.exception(e)
+
+    def _init_carriage_info(self, ):
+        if self.qtrain_info.curr_train2d is not None:
+            self.qtrain_info.curr_train2d.img_h = self.channel_params.img_h
+            self.qtrain_info.curr_train2d.img_w = self.channel_params.img_w
+
+        if self.qtrain_info.curr_train3d is not None:
+            self.qtrain_info.curr_train3d.img_h = self.channel_params.img3d_h
+            self.qtrain_info.curr_train3d.img_w = self.channel_params.img3d_w
+
+        if self.qtrain_info.hist_train2d is not None:
+            self.qtrain_info.hist_train2d.img_h = self.channel_params.img_h
+            self.qtrain_info.hist_train2d.img_w = self.channel_params.img_w
         
-        for bbox in item_bboxes:
-            if bbox.name in label_list:
-                curr_rect_p = frame2rect(bbox.curr_rect, test_startline, img_h, img_w,
-                            start_minor_axis_fp=0, axis=axis)
-                curr_rect_img = crop_segmented_rect(test_img, curr_rect_p)
+        if self.qtrain_info.hist_train3d is not None:
+            self.qtrain_info.hist_train3d.img_h = self.channel_params.img3d_h
+            self.qtrain_info.hist_train3d.img_w = self.channel_params.img3d_w
+        
 
-                fname = concat_str(self.qtrain_info.minor_train_code,
-                    self.qtrain_info.train_num, self.qtrain_info.train_sn,
-                    self.qtrain_info.channel, self.qtrain_info.carriage,
-                    bbox.name, bbox.index)
-                img_path = save_path / (fname + ".jpg")
-                cv2.imwrite(str(img_path), curr_rect_img)
-                d_logger.info(f">>> {fname}")
+    def run(self):
+        self.output_save_path = SETTINGS.OUTPUT_PATH / concat_str(
+            self.qtrain_info.major_train_code,
+            self.qtrain_info.minor_train_code, 
+            self.qtrain_info.train_num, 
+            self.qtrain_info.train_sn
+        )
+        self.output_save_path.mkdir(exist_ok=True, parents=True)
+        try:
+            self.splitter.run(imread_full, imread3d_hx)
 
-    def _dev_generate_items_json_template_(self, save_path, anchor_bboxes=[], item_bboxes=[], chunk_bboxes=[]):
-        """Generate json template"""
-        save_path = Path(save_path)
-        save_path.mkdir(parents=True, exist_ok=True)
+            self.locator.update_temp_traininfo(self.itemInfo["startline"], self.itemInfo["endline"])
+            anchor_bboxes = json2bbox_formater(self.itemInfo.get("anchors", []))
+            item_bboxes = json2bbox_formater(self.itemInfo.get("items", []))
+            static_chunk_bboxes = json2bbox_formater(self.itemInfo.get("static_chunks", []))
+            dynamic_chunk_bboxes = json2bbox_formater(self.itemInfo.get("dynamic_chunks", []))
+            self.locator.run(anchor_bboxes, item_bboxes, static_chunk_bboxes, dynamic_chunk_bboxes, self.static_template)
 
-        json_dict = {}
-        json_dict["train_info"] = self.qtrain_info.to_dict()
-        json_dict["anchors"] = [i.to_dict() for i in anchor_bboxes] if anchor_bboxes else []
-        json_dict["items"] = [i.to_dict() for i in item_bboxes] if item_bboxes else []
-        json_dict["chunks"] = [i.to_dict() for i in chunk_bboxes] if chunk_bboxes else []
+            
+            map3d_minor_axis_affine_matrix = self.channel_params.locator.get('map3d_minor_axis_affine_matrix', [1, 0])
+            map3d_major_axis_affine_matrix = self.channel_params.locator.get('map3d_major_axis_affine_matrix', [1, 0])
+            map3d_minor_axis_poly_func = np.poly1d(map3d_minor_axis_affine_matrix)
+            map3d_major_axis_poly_func = np.poly1d(map3d_major_axis_affine_matrix)
+            res = self.detector.detect_items(
+                map3d_minor_axis_poly_func=map3d_minor_axis_poly_func, 
+                map3d_major_axis_poly_func=map3d_major_axis_poly_func
+            )
+        except Exception as e:
+            w_logger.error(e)
+            w_logger.exception(e)
 
-        fname = concat_str(self.qtrain_info.channel, self.qtrain_info.carriage)
-        fname = save_path / (fname + ".json")
-        write_json(fname, json_dict)
-
-
-class CropToolDev:
-    """开发阶段使用的生成，或者截图工具汇总"""
-    def __init__(self):
-        pass
+        img = plt_bboxes_on_img(
+            res, 
+            self.qtrain_info.curr_train2d.img.copy(), 
+            self.qtrain_info.curr_train2d.img_h, 
+            self.qtrain_info.curr_train2d.img_w,
+            self.qtrain_info.curr_train2d.startline, 
+            axis=self.channel_params.axis, 
+            vis_lv=1,
+            rect='curr_rect'
+        )
+        fname = self.output_save_path / (concat_str(self.qtrain_info.channel, self.qtrain_info.carriage) + "_curr2d.jpg")
+        cv2.imwrite(str(fname), img)
+        print(fname)
     
-    @staticmethod
-    def _dev_generate_items(save_path, img,bboxes, startline, img_h, img_w, axis, qtrain_info, 
-                        target_item_list=[], rect_type="curr_proposal_rect"):
-        if not bboxes:
-            return 
-
-        save_path = Path(save_path)
-        for bbox in bboxes:
-            if bbox.name in target_item_list or len(target_item_list) == 0:
-                curr_rect_p = frame2rect(eval(f"bbox.{rect_type}"), startline, img_h, img_w, start_minor_axis_fp=0, axis=axis)
-                curr_rect_img = crop_segmented_rect(img, curr_rect_p)
-                
-                fname = concat_str(qtrain_info.minor_train_code, qtrain_info.train_num, qtrain_info.train_sn,
-                        qtrain_info.channel, qtrain_info.carriage, bbox.name, bbox.index)
-                img_path = save_path / (fname + ".jpg")
-                cv2.imwrite(str(img_path), curr_rect_img)
-                print(f">>> {fname}")
-
-    # @staticmethod
-    # def _dev_generate_cutpoints(save_path, splitter, qtrain_info, cutframe_idxes=None, imread=imread_tenth):
-    #     if cutframe_idxes is not None:
-    #         splitter.update_cutframe_idx(cutframe_idxes[0], cutframe_idxes[1])
-    #     else:
-    #         cutframe_idxes = splitter.get_approximate_cutframe_idxes()
-    #         # update cutframe idx
-    #         splitter.update_cutframe_idx(cutframe_idxes[qtrain_info.carriage-1], 
-    #                     cutframe_idxes[qtrain_info.carriage])
-
-    #     splitter._dev_generate_cutpoints_img_(save_path, imread=imread)
+        # img = plt_bboxes_on_img(
+        #     res, 
+        #     self.qtrain_info.hist_train2d.img.copy(), 
+        #     self.qtrain_info.hist_train2d.img_h, 
+        #     self.qtrain_info.hist_train2d.img_w,
+        #     self.qtrain_info.hist_train2d.startline, 
+        #     axis=self.channel_params.axis, 
+        #     vis_lv=1,
+        #     rect='hist_rect'
+        # )
+        # fname = self.output_save_path / (concat_str(self.qtrain_info.channel, self.qtrain_info.carriage) + "_hist2d.jpg")
+        # cv2.imwrite(str(fname), img)
+        # print(fname)
 
 
-
-
-
-
-
-
-        
+        # img = plt_bboxes_on_img(
+        #     res, 
+        #     self.qtrain_info.curr_train3d.img.copy(), 
+        #     self.qtrain_info.curr_train3d.img_h, 
+        #     self.qtrain_info.curr_train3d.img_w,
+        #     self.qtrain_info.curr_train3d.startline, 
+        #     axis=self.channel_params.axis, 
+        #     vis_lv=1,
+        #     rect='curr_rect3d',
+        #     resize_ratio=0.5
+        # )
+        # fname = self.output_save_path / (concat_str(self.qtrain_info.channel, self.qtrain_info.carriage) + "_curr3d.jpg")
+        # cv2.imwrite(str(fname), img)
+        # print(fname)
+    
+        # img = plt_bboxes_on_img(
+        #     res, 
+        #     self.qtrain_info.hist_train3d.img.copy(), 
+        #     self.qtrain_info.hist_train3d.img_h, 
+        #     self.qtrain_info.hist_train3d.img_w,
+        #     self.qtrain_info.hist_train3d.startline, 
+        #     axis=self.channel_params.axis, 
+        #     vis_lv=1,
+        #     rect='hist_rect3d',
+        #     resize_ratio=0.5
+        # )
+        # fname = self.output_save_path / (concat_str(self.qtrain_info.channel, self.qtrain_info.carriage) + "_hist3d.jpg")
+        # cv2.imwrite(str(fname), img)
+        # print(fname)
