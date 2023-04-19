@@ -10,16 +10,15 @@ from omegaconf import OmegaConf, DictConfig
 
 from pystar360.base.baseInferencer import BaseInfer
 from pystar360.utilities.de import decrpt_content_from_filepath
-
+from pystar360.utilities.logger import w_logger
 
 @lru_cache(maxsize=8, typed=False)  # 添加lru缓存机制
 class ClsInfer(BaseInfer):
-    def __init__(self, model_type, model_params, model_path, device, logger=None, mac_password=None):
+    def __init__(self, model_type, model_params, model_path, device, mac_password=None):
         self.model_type = model_type
         self.model_params = model_params
         self.model_path = model_path
         self.device = device
-        self.logger = logger
         self.mac_password = mac_password
         self._initialize()
 
@@ -28,8 +27,7 @@ class ClsInfer(BaseInfer):
         try:
             model = getattr(models, self.model_type)(**self.model_params)
         except ValueError:
-            if self.logger:
-                self.logger.error(f"Please provide a valid model name {self.model_type}")
+            w_logger.error(f"Please provide a valid model name {self.model_type}")
             raise ValueError(f"Please provide a valid model name {self.model_type}")
 
         if self.mac_password:

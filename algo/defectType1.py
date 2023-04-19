@@ -10,7 +10,7 @@ from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect, hungary_match
 from pystar360.utilities.helper3d import map3d_for_bboxes
 
-from pystar360.utilities._logger import d_logger
+from pystar360.utilities.logger import w_logger
 from pystar360.base.dataStruct import CarriageInfo, BBox
 from typing import List, Optional, Callable
 @algoDecorator
@@ -44,7 +44,6 @@ class DetectItemsMissing(algoBaseABC):
             self.item_params["model_path"],
             self.device,
             imgsz=self.item_params["imgsz"],
-            logger=self.logger,
             mac_password=self.mac_password,
         )
 
@@ -91,10 +90,9 @@ class DetectItemsMissing(algoBaseABC):
                     box.curr_rect = curr_proposal_rect_f
                     if hist_actual_num > 0:
                         box.is_defect = 1
-                    if self.logger:
-                        self.logger.info(box.description)
-                    else:
-                        d_logger.info(box.description)
+                    if self.debug:
+                        w_logger.info(box.description)
+                    
                     new_item_bboxes_list.append(box)
                     count += 1
                     continue
@@ -142,10 +140,9 @@ class DetectItemsMissing(algoBaseABC):
                     box.index = count
                     box.curr_rect = curr_proposal_rect_f
                     box.is_defect = 1
-                    if self.logger:
-                        self.logger.info(box.description)
-                    else:
-                        d_logger.info(box.description)
+                    if self.debug:
+                        w_logger.info(box.description)
+                    
                     # update list
                     new_item_bboxes_list.append(box)
                     count += 1
@@ -192,9 +189,7 @@ class DetectItemsMissing(algoBaseABC):
                 map3d_for_bboxes(new_item_bboxes_list, self.axis, map3d_minor_axis_poly_func, map3d_major_axis_poly_func)
 
             if self.debug:
-                if self.logger:
-                    self.logger.info(box.description)
-                else:
-                    d_logger.info(box.description)
-
+                if self.debug:
+                    w_logger.info(box.description)
+                
         return new_item_bboxes_list

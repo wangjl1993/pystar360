@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pystar360.base.dataStruct import QTrainInfo
 from pystar360.utilities.helper import get_img_size, imread_full, read_segmented_img
-from pystar360.utilities._logger import d_logger
+from pystar360.utilities.logger import w_logger
 
 MAXSIZE_CACHE = 8
 
@@ -30,7 +30,6 @@ class ImReader(ImReaderABC):
         channel,
         filter_ext=(".jpg"),
         check_files=True,
-        logger=None,
         debug=False,
         verbose=False,
         client="HITO",
@@ -40,7 +39,6 @@ class ImReader(ImReaderABC):
         self.channel = channel
         self.filter_ext = filter_ext
         self.check_files = check_files
-        self.logger = logger if logger else d_logger
         self.debug = debug
         self.verbose = verbose
         self.client = client.upper()
@@ -86,7 +84,7 @@ class ImReader(ImReaderABC):
 
         except Exception as e:
             if self.debug:
-                d_logger.info(e)
+                w_logger.info(e)
             raise FileNotFoundError(f">>> {str(self.images_path)}没有找到相对应的图像路径，请检查后路径是否正确")
 
         if len(self._image_path_list) != 0:
@@ -94,8 +92,9 @@ class ImReader(ImReaderABC):
                 self._check_file()
 
             self._image_path_list = list(map(str, self._image_path_list))
-            self.logger.info(f">>> The number of images listed in the given path: {self.__len__()}")
+            w_logger.info(f">>> The number of images listed in the given path: {self.__len__()}")
         else:
+            w_logger.error(f">>> The number of images listed in the given path: {self.__len__()}")
             raise FileNotFoundError(f">>> The number of images listed in the given path: {self.__len__()}")
 
     def get_images_list(self):
@@ -123,37 +122,35 @@ class BatchImReader(ImReaderABC):
         self,
         qtrain_info: QTrainInfo,
         check_files=True,
-        logger=None,
         debug=False,
         verbose=False,
         client="HITO",
     ):
         self.qtrain_info = qtrain_info
         self.check_files = check_files
-        self.logger = logger if logger else d_logger
         self.debug = debug
         self.verbose = verbose
         self.client = client.upper()
 
         self.filter_rules = self._get_filters()
 
-        self._test_img2d_list = None
-        self._test_img3d_list = None
+        self._curr_img2d_list = None
+        self._curr_img3d_list = None
         self._hist_img2d_list = None
         self._hist_img3d_list = None
         self._read()
 
     @property
-    def test_img2d_list(self):
-        return self._test_img2d_list
+    def curr_img2d_list(self):
+        return self._curr_img2d_list
 
     @property
     def hist_img2d_list(self):
         return self._hist_img2d_list
 
     @property
-    def test_img3d_list(self):
-        return self._test_img3d_list
+    def curr_img3d_list(self):
+        return self._curr_img3d_list
 
     @property
     def hist_img3d_list(self):
@@ -191,8 +188,8 @@ class BatchImReader(ImReaderABC):
             file_list = sorted(file_list, key=lambda x: (int(re.sub("\D", "", x.name)), x))
 
         except Exception as e:
-            if self.debug:
-                d_logger.info(e)
+            w_logger.error(f">>> {str(img_path)} {ext}没有找到相对应的图像路径，请检查后路径是否正确")
+            w_logger.error(e)
             raise FileNotFoundError(f">>> {str(img_path)} {ext}没有找到相对应的图像路径，请检查后路径是否正确")
 
         if len(file_list) != 0:
@@ -200,22 +197,23 @@ class BatchImReader(ImReaderABC):
                 self._check_file(file_list)
 
             file_list = list(map(str, file_list))
-            self.logger.info(f">>> The number of images listed in the given path: {len(file_list)}")
+            w_logger.info(f">>> The number of images listed in the given path: {len(file_list)}")
         else:
+            w_logger.error(f">>> The number of images listed in the given path: {len(file_list)}")
             raise FileNotFoundError(f">>> The number of images listed in the given path: {len(file_list)}")
 
         return file_list
 
     def _read(self):
-        # read test image
+        # read curr image
         if self.qtrain_info.curr_train2d is not None:
-            self._test_img2d_list = self._read_from_single_path(
+            self._curr_img2d_list = self._read_from_single_path(
                 self.qtrain_info.curr_train2d.path, self.filter_rules, self.qtrain_info.img2d_ext
             )
 
         # if need 3d
         if self.qtrain_info.curr_train3d is not None:
-            self._test_img3d_list = self._read_from_single_path(
+            self._curr_img3d_list = self._read_from_single_path(
                 self.qtrain_info.curr_train3d.path, self.filter_rules, self.qtrain_info.img3d_ext
             )
 

@@ -1,17 +1,16 @@
 from pystar360.utilities.deviceController import time_sync
-from pystar360.utilities._logger import d_logger
+from pystar360.utilities.logger import w_logger
 
 
 class algoDecorator:
-    def __init__(self, function, logger=None):
+    def __init__(self, function):
         self.function = function
-        self.logger = logger if logger else d_logger
 
     def __call__(self, *args, **kwargs):
         t1 = time_sync()
         result = self.function(*args, **kwargs)
         t2 = time_sync()
-        self.logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
+        w_logger.info(f'>>> Function executed in {(t2-t1):.6f}s')
         return result
 
 

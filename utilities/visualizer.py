@@ -58,11 +58,8 @@ def plt_bboxes_on_img(
             text = concat_str(b.name, b.index, b.conf_score)
         else:
             text = concat_str(b.name, b.index, b.conf_score)
-            # if use_3drect:
-            #     proposal_points = frame2rect(b.curr_proposal_rect3d, startline, img_h, img_w, axis=axis)
-            # else:
-            #     proposal_points = frame2rect(b.curr_proposal_rect, startline, img_h, img_w, axis=axis)
-            # cv2.rectangle(img, proposal_points[0], proposal_points[1], palette.PURPLE.value, 1)
+            proposal_points = frame2rect(b.__getattribute__(rect.replace('_', '_proposal_')) , startline, img_h, img_w, axis=axis)
+            cv2.rectangle(img, proposal_points[0], proposal_points[1], palette.PURPLE.value, 1)
 
         cv2.putText(img, text, points[0], cv2.FONT_HERSHEY_PLAIN, 1.5, color.value)
 

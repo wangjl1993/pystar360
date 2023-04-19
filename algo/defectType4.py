@@ -12,7 +12,7 @@ from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect
 from pystar360.utilities.helper3d import depthImg2pcd
 # from pystar360.utilities.helper3d import
-from pystar360.utilities._logger import d_logger
+from pystar360.utilities.logger import w_logger
 import open3d as o3d
 from typing import Tuple, List, Optional
 from pystar360.base.dataStruct import CarriageInfo, BBox
@@ -166,10 +166,7 @@ class DetectNutLoose3d_v1(algoBaseABC):
             count += 1
 
             if self.debug:
-                if self.logger:
-                    self.logger.info(box.description)
-                else:
-                    d_logger.info(box.description)
+                w_logger.info(box.description)
 
         return new_item_bboxes_list
 
@@ -349,5 +346,7 @@ class DetectLoose3dByAlign(algoBaseABC):
             box.is_detected = 1
             box.index = count + 1
             new_item_bboxes_list.append(box)
+            if self.debug:
+                w_logger.info(box.description)
 
         return new_item_bboxes_list

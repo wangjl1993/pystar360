@@ -4,13 +4,13 @@ from omegaconf import DictConfig, ListConfig
 
 from pystar360.base.dataStruct import bboxes_collector, QTrainInfo
 from pystar360.algo.algoBase import NullDetection
-from pystar360.utilities._logger import d_logger
+from pystar360.utilities.logger import w_logger
 
 __all__ = ["Detector"]
 
 
 class Detector:
-    def __init__(self, qtrain_info: QTrainInfo, item_params, device, axis=1, logger=None, debug=False, mac_password=None):
+    def __init__(self, qtrain_info: QTrainInfo, item_params, device, axis=1, debug=False, mac_password=None):
         # query train informaiton
         self.qtrain_info = qtrain_info
 
@@ -20,7 +20,6 @@ class Detector:
         # itemInfo
         self.device = device
         self.axis = axis
-        self.logger = logger if logger else d_logger
         self.debug = debug
         self.mac_password = mac_password
 
@@ -30,17 +29,17 @@ class Detector:
 
         # collect bboxes
         item_bboxes_dict = bboxes_collector(self.qtrain_info.item_bboxes)
-        self.logger.info(f">>> Start detection...")
+        w_logger.info(f">>> Start detection...")
 
         new_item_bboxes = []
         for label_name, item_bboxes_list in item_bboxes_dict.items():
-            self.logger.info(f">>> Processing items with label: {label_name}")
+            w_logger.info(f">>> Processing items with label: {label_name}")
 
             # load params
             try:
                 item_params = self.item_params[label_name]
             except KeyError:
-                self.logger.info(f">>> Params not provided. Skip items with label: {label_name}")
+                w_logger.info(f">>> Params not provided. Skip items with label: {label_name}")
                 # new_item_bboxes.extend(item_bboxes_list)
                 continue
 
@@ -56,15 +55,16 @@ class Detector:
 
             # start looping
             for idx, item_param in enumerate(item_params, start=1):
-                self.logger.info(f">>> Call method {idx} {item_param.func} for {label_name}.")
+                w_logger.info(f">>> Call method {idx} {item_param.func} for {label_name}.")
 
                 if self.debug:  # load func
                     func_obj = getattr(import_module(item_param.module), item_param.func)
                 else:
                     try:
                         func_obj = getattr(import_module(item_param.module), item_param.func)
-                    except:
-                        self.logger.info(f">>> Fail to call {item_param.func}")
+                    except Exception as e:
+                        w_logger.error(f">>> Fail to call {item_param.func}: {e}")
+                        w_logger.exception(e)
                         # new_item_bboxes.extend(item_bboxes_list)
                         continue
 
@@ -72,7 +72,6 @@ class Detector:
                 func = func_obj(
                     item_params=item_param.params,
                     device=self.device,
-                    logger=self.logger,
                     axis=self.axis,
                     mac_password=self.mac_password,
                     debug=self.debug,
@@ -100,11 +99,12 @@ class Detector:
                         item_bboxes_list = local_item_bboxes
                     except Exception as e:
                         local_item_bboxes = item_bboxes_list
-                        self.logger.info(str(e))
+                        w_logger.error(e)
+                        w_logger.exception(e)
 
             new_item_bboxes.extend(local_item_bboxes)
 
-        self.logger.info(f">>> Finished detection...")
+        w_logger.info(f">>> Finished detection...")
         return new_item_bboxes
 
     def _dev_item_null_detection_(self, item_bboxes, *args, **kwargs):

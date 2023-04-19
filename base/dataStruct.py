@@ -7,6 +7,7 @@ from typing import (
 from pystar360.utilities.helper import get_label_num2check
 import numpy as np
 import copy
+from pystar360.utilities.logger import w_logger, set_task_id
 
 @dataclass_json
 @dataclass
@@ -384,7 +385,7 @@ class CarriageInfo:
     }    
 
     def __setattr__(self, __name: str, __value: Any) -> None:
-        print("set: ", __name)
+        # print("set: ", __name)
         self_count_key = f"__{id(self)}_fronze_fields_cnt__"
         try:
             self_count_value = getattr(self, self_count_key)
@@ -395,7 +396,7 @@ class CarriageInfo:
         
         cur_val = self_count_value.get(__name, 0)
         if cur_val > self.__fronze_fields__[__name]:
-            raise ValueError()
+            raise ValueError("CarriageInfo attri cannot be set again.")
         super().__setattr__(__name, __value)
         self_count_value[__name] = cur_val+1
 
@@ -422,11 +423,26 @@ class QTrainInfo:
     img2d_ext: str = ".jpg"  # 2d图像后缀
     img3d_ext: str = ".data"  # 深度图后缀
 
+    def __post_init__(self,):
+        # 任务id
+        self.unique_repr_of_task = f"{self.minor_train_code}_{self.train_num}_{self.channel}_{self.carriage}_{self.train_sn}"
+        set_task_id(self.unique_repr_of_task)
+        if self.curr_train2d is not None:
+            w_logger.info(f"curr_train2d path: {self.curr_train2d.path}")
+        if self.curr_train3d is not None:
+            w_logger.info(f"curr_train3d path: {self.curr_train3d.path}")
+        if self.hist_train2d is not None:
+            w_logger.info(f"hist_train2d path: {self.hist_train2d.path}")
+        if self.hist_train3d is not None:
+            w_logger.info(f"hist_train3d path: {self.hist_train3d.path}")
+
+        w_logger.info(f'direction: {self.direction}')
+        
 
     # def __getattribute__(self, __name: str) -> Any:
     #     print("get: ", __name)
     #     return super().__getattr__(__name)
     
-    def __setattr__(self, __name: str, __value: Any) -> None:
-        print("set: ", __name)
-        super().__setattr__(__name, __value)
+    # def __setattr__(self, __name: str, __value: Any) -> None:
+    #     print("set: ", __name)
+    #     super().__setattr__(__name, __value)

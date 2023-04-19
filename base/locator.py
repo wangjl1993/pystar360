@@ -13,7 +13,7 @@ from pystar360.utilities.helper import (
     get_label_num2check, xyxy2left_xywh, xyxy_nested, 
     resize_img, concat_str, hungary_match
 )
-from pystar360.utilities._logger import d_logger
+from pystar360.utilities.logger import w_logger
 from pystar360.utilities.helper3d import map3d_for_bboxes
 from typing import (
     Union, List, Dict,
@@ -102,7 +102,7 @@ def trans_coords_from_chunk2frame(chunk_rect: list, item_rect: list):
 
 
 class Locator:
-    def __init__(self, qtrain_info: QTrainInfo, local_params, device, axis=1, logger=None, debug=False, mac_password=None):
+    def __init__(self, qtrain_info: QTrainInfo, local_params, device, axis=1, debug=False, mac_password=None):
         # query information
         self.qtrain_info = qtrain_info
         # local params
@@ -116,8 +116,6 @@ class Locator:
         self.main_axis = 1 if self.axis == 0 else 0
         self.minor_axis = self.axis
 
-        # logger
-        self.logger = logger
         self.debug = debug
         self.mac_password = mac_password
 
@@ -144,7 +142,7 @@ class Locator:
         iou_thres = kwargs.get("iou_thres", self.local_params.iou_thres)
 
         # load model
-        model = YoloInfer(model_path, self.device, imgsz=imgsz, logger=self.logger, mac_password=self.mac_password)
+        model = YoloInfer(model_path, self.device, imgsz=imgsz, mac_password=self.mac_password)
 
         new_anchor_bboxes = []
         for _, bbox in enumerate(anchor_bboxes):
@@ -180,8 +178,8 @@ class Locator:
                 new_anchor_bboxes.append(bbox)
 
         if self.debug:
-            d_logger.info(f">>> Num of anchors before processing: {len(anchor_bboxes)}")
-            d_logger.info(f">>> Num of anchors after processing: {len(new_anchor_bboxes)}")
+            w_logger.info(f">>> Num of anchors before processing: {len(anchor_bboxes)}")
+            w_logger.info(f">>> Num of anchors after processing: {len(new_anchor_bboxes)}")
 
         return new_anchor_bboxes
 
@@ -190,8 +188,7 @@ class Locator:
         try:
             minor_axis_poly_func = np.poly1d(minor_axis_affine_maxtrix)
         except:
-            if self.logger:
-                self.logger.warning(f"Minor axis affine transform matrix is invalid: {minor_axis_affine_maxtrix}")
+            w_logger.error(f"Minor axis affine transform matrix is invalid: {minor_axis_affine_maxtrix}")
             raise ValueError(f"Minor axis affine transform matrix is invalid: {minor_axis_affine_maxtrix}")
         return minor_axis_poly_func
 
@@ -252,10 +249,10 @@ class Locator:
             self.curr_anchor_points = [self.test_startline] + self.curr_anchor_points + [self.test_endline]
 
         if self.debug:
-            d_logger.info(
+            w_logger.info(
                 f">>> Minor axis adjustment [linear transformation]: {self.minor_axis_poly_func.coefficients}"
             )
-            d_logger.info(f">>> Main axis adjustment [ratio adjustment]: {len(self.temp_anchor_points)} points")
+            w_logger.info(f">>> Main axis adjustment [ratio adjustment]: {len(self.temp_anchor_points)} points")
 
     def locate_bboxes_according2anchors(self, bboxes):
         if not bboxes:
@@ -353,7 +350,7 @@ class Locator:
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
 
-        d_logger.info(">>> Start cropping...")
+        w_logger.info(">>> Start cropping...")
         for idx, bbox in enumerate(anchor_bboxes):
             if bbox.name in label_list or len(label_list) == 0:
                 new_template = deepcopy(LABELME_TEMPLATE)
@@ -424,7 +421,7 @@ class Locator:
                 cv2.imwrite(str(img_fname), proposal_rect_img)
                 json_fname = save_path / (fname + ".json")
                 write_json(str(json_fname), new_template)
-                d_logger.info(f">>> {fname}.")
+                w_logger.info(f">>> {fname}.")
 
     def locate_bboxes_using_static_chunks(
             self, bboxes: List[BBox], template: Dict, test_img: np.ndarray, 
@@ -462,7 +459,7 @@ class Locator:
                         proposal_rect_p = frame2rect(box.curr_rect, self.test_startline, img_h, img_w, axis=self.axis)
                         img = crop_segmented_rect(test_img, proposal_rect_p)
                         cfg = cls_static_chunks[label]
-                        classifier = ClsInfer(cfg.model_type, cfg.model_params, cfg.model_path, self.device, self.logger, self.mac_password)
+                        classifier = ClsInfer(cfg.model_type, cfg.model_params, cfg.model_path, self.device, self.mac_password)
                         classifier.get_transform_funs(cfg.transform_funs)
                         class_id = classifier.infer(img)
 
@@ -507,7 +504,7 @@ class Locator:
         for area_label, areas in area_dict.items():
             
             cfg = self.local_params["det_dynamic_chunks"][area_label]
-            model = YoloInfer(cfg.model_path, self.device, cfg.imgsz, logger=self.logger, mac_password=self.mac_password)
+            model = YoloInfer(cfg.model_path, self.device, cfg.imgsz, mac_password=self.mac_password)
 
             for area in areas:
                 proposal_rect_p = frame2rect(area.curr_rect, self.test_startline, img_h, img_w, axis=self.axis)

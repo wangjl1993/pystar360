@@ -11,7 +11,7 @@ from pystar360.ano.inference import PatchCoreInfer
 from pystar360.base.dataStruct import CarriageInfo, BBox
 from typing import List, Optional
 
-from pystar360.utilities._logger import d_logger
+from pystar360.utilities.logger import w_logger
 
 
 @algoDecorator
@@ -60,7 +60,6 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             config_path,
             self.device,
             image_size=image_size,
-            logger=self.logger,
             mac_password=self.mac_password,
         )
 
@@ -93,12 +92,9 @@ class DetectForeignObjectWholeImage(algoBaseABC):
             box.description = f">>> box: {box.name}; score {score}; threshold: {conf_thres}."
             new_item_bboxes_list.append(box)
             count += 1
-
-            if self.debug:
-                if self.logger:
-                    self.logger.info(box.description)
-                else:
-                    d_logger.info(box.description)
+            
+            w_logger.info(box.description)
+                
 
         return new_item_bboxes_list
 

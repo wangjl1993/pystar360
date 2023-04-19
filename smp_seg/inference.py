@@ -8,19 +8,18 @@ import numpy as np
 import albumentations as albu
 from pystar360.base.baseInferencer import BaseInfer
 from pystar360.utilities.de import decrpt_content_from_filepath
-
+from pystar360.utilities.logger import w_logger
 
 def to_tensor(x, **kwargs):
     return x.transpose(2, 0, 1).astype('float32')
 
 @lru_cache(maxsize=8, typed=False)  # 添加lru缓存机制，参数对象必须可hash
 class SmpInfer(BaseInfer):
-    def __init__(self, model_type: str, model_params: DictConfig, model_path: str, device: str, logger=None, mac_password=None):
+    def __init__(self, model_type: str, model_params: DictConfig, model_path: str, device: str, mac_password=None):
         self.model_type = model_type
         self.model_params = model_params
         self.model_path = model_path
         self.device = device
-        self.logger = logger
         self.mac_password = mac_password
         self._initialize()
 
@@ -28,8 +27,7 @@ class SmpInfer(BaseInfer):
         try:
             model = getattr(smp, self.model_type)(**self.model_params, encoder_weights=None) # set encoder_weights=None, otherwise smp will download imagenet pretrained model.
         except ValueError:
-            if self.logger:
-                self.logger.error(f"Please provide a valid model name {self.model_type} or model params {self.model_params}")
+            w_logger.error(f"Please provide a valid model name {self.model_type} or model params {self.model_params}")
             raise ValueError(f"Please provide a valid model name {self.model_type} or {self.model_params}, please see https://github.com/qubvel/segmentation_models.pytorch")
 
         if self.mac_password:

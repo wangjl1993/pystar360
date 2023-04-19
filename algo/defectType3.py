@@ -8,7 +8,7 @@ import copy
 from pystar360.algo.algoBase import algoBaseABC, algoDecorator
 from pystar360.yolo.inference import YoloInfer, yolo_xywh2xyxy_v2
 from pystar360.utilities.helper import crop_segmented_rect, frame2rect
-from pystar360.utilities._logger import d_logger
+from pystar360.utilities.logger import w_logger
 from pystar360.base.dataStruct import CarriageInfo, BBox
 from typing import List
 
@@ -38,7 +38,6 @@ class DetectAtMostNObj(algoBaseABC):
             self.item_params["model_path"],
             self.device,
             imgsz=self.item_params["imgsz"],
-            logger=self.logger,
             mac_password=self.mac_password,
         )
         at_most_n = self.item_params.get("at_most_n", 0)
@@ -76,9 +75,6 @@ class DetectAtMostNObj(algoBaseABC):
             count += 1
 
             if self.debug:
-                if self.logger:
-                    self.logger.info(box.description)
-                else:
-                    d_logger.info(box.description)
+                w_logger.info(box.description)
 
         return new_item_bboxes_list
